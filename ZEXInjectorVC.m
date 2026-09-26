@@ -56,6 +56,11 @@ static void ZXRedGlow(UIView*v,CGFloat r){
     v.layer.shadowColor=ZXRed.CGColor;v.layer.shadowOpacity=.3;
     v.layer.shadowRadius=r;v.layer.shadowOffset=CGSizeZero;
 }
+static void ZXAddTouchAnimation(UIButton *btn) {
+    [btn addTarget:btn action:@selector(removeFromSuperview) forControlEvents:UIControlEventTouchDown]; // safety dummy
+    // Clear and attach scale down/up actions
+    objc_setAssociatedObject(btn, "ZXTouchAnim", @"1", OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
 
 static BOOL ZXExtractZipFile(NSString *zipPath, NSString *destDir) {
     NSData *data = [NSData dataWithContentsOfFile:zipPath];
@@ -1026,6 +1031,9 @@ static void ZXApplyModernButton(UIButton *btn) {
     [super viewDidLoad];_tab=0;self.view.backgroundColor=ZXBg;
     if(!self.selectedGameMode) self.selectedGameMode = @"FFTH";
     [self buildBackground];[self buildUI];[self loadConfig];
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.15 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [self showGameModeSelectionWithInitialTab:0];
+    });
 }
 -(void)showGameModeSelection {
     [self showGameModeSelectionWithInitialTab:0];
@@ -1167,7 +1175,7 @@ static void ZXApplyModernButton(UIButton *btn) {
     
     UIButton *typeTabBtn = [UIButton buttonWithType:UIButtonTypeCustom];
     typeTabBtn.translatesAutoresizingMaskIntoConstraints = NO;
-    [typeTabBtn setTitle:@"⚙️ Type" forState:UIControlStateNormal];
+    [typeTabBtn setTitle:@"Type" forState:UIControlStateNormal];
     typeTabBtn.titleLabel.font = [UIFont systemFontOfSize:14 weight:UIFontWeightBold];
     typeTabBtn.tag = 501;
     [typeTabBtn addTarget:self action:@selector(modeNavTabTap:) forControlEvents:UIControlEventTouchUpInside];
@@ -1385,7 +1393,7 @@ static void ZXApplyModernButton(UIButton *btn) {
     
     UILabel *logoutTitle = [UILabel new];
     logoutTitle.translatesAutoresizingMaskIntoConstraints = NO;
-    logoutTitle.text = @"🚪  Sign Out / Change Key";
+    logoutTitle.text = @"Sign Out / Change Key";
     logoutTitle.font = [UIFont systemFontOfSize:15 weight:UIFontWeightBold];
     logoutTitle.textColor = ZXRed;
     [logoutBtn addSubview:logoutTitle];
@@ -1817,7 +1825,7 @@ static void ZXApplyModernButton(UIButton *btn) {
     n.textColor = UIColor.whiteColor; n.textAlignment = NSTextAlignmentLeft; [p addSubview:n];
     
     UILabel*a = [UILabel new]; a.frame = CGRectMake(10, 18, w - 20, 14);
-    NSMutableAttributedString*as = [[NSMutableAttributedString alloc] initWithString:@"⚡ INJECTED"];
+    NSMutableAttributedString*as = [[NSMutableAttributedString alloc] initWithString:@"INJECTED"];
     [as addAttribute:NSForegroundColorAttributeName value:ZXGreen range:NSMakeRange(0, as.length)];
     [as addAttribute:NSFontAttributeName value:[UIFont systemFontOfSize:8.5 weight:UIFontWeightBold] range:NSMakeRange(0, as.length)];
     [as addAttribute:NSKernAttributeName value:@0.8 range:NSMakeRange(0, as.length)];
@@ -1987,7 +1995,7 @@ static void ZXApplyModernButton(UIButton *btn) {
     
     // Channel button (Top-right green pill button: 📢 CHANNEL)
     UIButton*channelBtn=[UIButton buttonWithType:UIButtonTypeSystem];channelBtn.translatesAutoresizingMaskIntoConstraints=NO;
-    [channelBtn setTitle:@"📣 CHANNEL" forState:0];
+    [channelBtn setTitle:@"CHANNEL" forState:0];
     [channelBtn setTitleColor:[UIColor colorWithRed:0.25 green:0.88 blue:0.45 alpha:1.0] forState:0];
     channelBtn.titleLabel.font=[UIFont systemFontOfSize:11 weight:UIFontWeightBold];
     channelBtn.backgroundColor=[UIColor colorWithRed:0.04 green:0.22 blue:0.10 alpha:0.75];
@@ -2036,10 +2044,10 @@ static void ZXApplyModernButton(UIButton *btn) {
     _modeBadgeLbl = [UILabel new];
     _modeBadgeLbl.translatesAutoresizingMaskIntoConstraints = NO;
     if ([self.selectedGameMode isEqualToString:@"FFMAX"]) {
-        _modeBadgeLbl.text = @"🔥 FF MAX";
+        _modeBadgeLbl.text = @"FF MAX";
         _modeBadgeLbl.textColor = [UIColor colorWithRed:1.0 green:0.75 blue:0.2 alpha:1.0];
     } else {
-        _modeBadgeLbl.text = @"⚡ FF NORMAL";
+        _modeBadgeLbl.text = @"FF NORMAL";
         _modeBadgeLbl.textColor = [UIColor colorWithRed:0.25 green:0.88 blue:0.45 alpha:1.0];
     }
     _modeBadgeLbl.font = [UIFont systemFontOfSize:10.5 weight:UIFontWeightBlack];
@@ -2230,20 +2238,20 @@ static void ZXApplyModernButton(UIButton *btn) {
     retryBtn.layer.cornerRadius = 18;
     retryBtn.layer.borderColor = [UIColor colorWithRed:0.95 green:0.15 blue:0.3 alpha:0.7].CGColor;
     retryBtn.layer.borderWidth = 1.2;
-    [retryBtn setTitle:@"🔄 Retry" forState:UIControlStateNormal];
+    [retryBtn setTitle:@"Retry" forState:UIControlStateNormal];
     [retryBtn setTitleColor:[UIColor colorWithRed:1.0 green:0.4 blue:0.55 alpha:1.0] forState:UIControlStateNormal];
     retryBtn.titleLabel.font = [UIFont systemFontOfSize:16 weight:UIFontWeightBold];
     [retryBtn addTarget:self action:@selector(retryTap) forControlEvents:UIControlEventTouchUpInside];
     [self.view addSubview:retryBtn];
     
-    // Button 2: 📢 Official Channel (Green Glass Button)
+    // Button 2: Official Channel (Green Glass Button)
     UIButton *chanBtn = [UIButton buttonWithType:UIButtonTypeCustom];
     chanBtn.translatesAutoresizingMaskIntoConstraints = NO;
     chanBtn.backgroundColor = [UIColor colorWithRed:0.03 green:0.18 blue:0.06 alpha:0.85];
     chanBtn.layer.cornerRadius = 18;
     chanBtn.layer.borderColor = [UIColor colorWithRed:0.2 green:0.85 blue:0.4 alpha:0.7].CGColor;
     chanBtn.layer.borderWidth = 1.2;
-    [chanBtn setTitle:@"📢 Official Channel" forState:UIControlStateNormal];
+    [chanBtn setTitle:@"Official Channel" forState:UIControlStateNormal];
     [chanBtn setTitleColor:[UIColor colorWithRed:0.3 green:0.95 blue:0.5 alpha:1.0] forState:UIControlStateNormal];
     chanBtn.titleLabel.font = [UIFont systemFontOfSize:16 weight:UIFontWeightBold];
     [chanBtn addTarget:self action:@selector(channelTap) forControlEvents:UIControlEventTouchUpInside];
