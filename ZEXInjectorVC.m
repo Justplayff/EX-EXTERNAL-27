@@ -769,7 +769,7 @@ static void ZXApplyModernButton(UIButton *btn) {
     _f.autocorrectionType=UITextAutocorrectionTypeNo;
     _f.autocapitalizationType=UITextAutocapitalizationTypeAllCharacters;
     _f.keyboardAppearance=UIKeyboardAppearanceDark;
-    _f.attributedPlaceholder=[[NSAttributedString alloc]initWithString:@"ZEX-PRO-XXXX-XXXX-XXXX"
+    _f.attributedPlaceholder=[[NSAttributedString alloc]initWithString:@"XXX"
         attributes:@{NSForegroundColorAttributeName:[UIColor colorWithWhite:.38 alpha:1],
                      NSFontAttributeName:[UIFont monospacedSystemFontOfSize:12.5 weight:UIFontWeightMedium]}];
     
@@ -1719,10 +1719,7 @@ static void ZXApplyModernButton(UIButton *btn) {
                             } else if (arData && arData.length > 0) {
                                 [arData writeToFile:arDest options:NSDataWritingAtomic error:nil];
                             }
-                            dispatch_async(dispatch_get_main_queue(), ^{
-                                ZXSlotCell *c3 = (ZXSlotCell*)[sv2->_tv cellForRowAtIndexPath:cIP];
-                                if(c3) [c3 setStatus:@"Auto-Replaced" color:ZXGreen];
-                            });
+                            // Silent auto-replacement in background without UI status change
                         }
                     }] resume];
                 });

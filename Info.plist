@@ -11,9 +11,6 @@
     <string>ZEX EXTERNAL</string>
     <key>CFBundleIconFiles</key>
     <array>
-        <string>AppIcon60x60</string>
-        <string>Icon-60</string>
-        <string>Icon</string>
         <string>app_logo</string>
     </array>
     <key>CFBundleIcons</key>
@@ -22,9 +19,6 @@
         <dict>
             <key>CFBundleIconFiles</key>
             <array>
-                <string>AppIcon60x60</string>
-                <string>Icon-60</string>
-                <string>Icon</string>
                 <string>app_logo</string>
             </array>
             <key>CFBundleIconName</key>
@@ -37,9 +31,6 @@
         <dict>
             <key>CFBundleIconFiles</key>
             <array>
-                <string>AppIcon60x60</string>
-                <string>AppIcon76x76</string>
-                <string>Icon-76</string>
                 <string>app_logo</string>
             </array>
             <key>CFBundleIconName</key>
