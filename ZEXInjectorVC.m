@@ -318,7 +318,7 @@ static BOOL ZXExtractZipFile(NSString *zipPath, NSString *destDir) {
 }
 -(void)configure:(ZXSlot*)s idx:(NSInteger)idx {
     _num.text = @"";
-    _name.text = [NSString stringWithFormat:@"%02ld. %@", (long)(idx+1), s.name];
+    _name.text = s.name;
     _desc.text = s.desc;
     self.sw.on = NO;
     self.sw.enabled = !s.locked;
@@ -405,8 +405,8 @@ static UIImage* ZXFixOrientation(UIImage* src) {
     return self;
 }
 -(void)configure:(ZXSlot*)s idx:(NSInteger)idx{
-    _num.text=@"";
-    _num.hidden=YES;
+    _num.text=[NSString stringWithFormat:@"%02ld",(long)(idx+1)];
+    _num.hidden=NO;
     _name.text = [NSString stringWithFormat:@"%02ld. %@", (long)(idx+1), s.name];
     _desc.text=s.desc;
     self.sw.on=NO;
@@ -1031,9 +1031,7 @@ static void ZXApplyModernButton(UIButton *btn) {
     [super viewDidLoad];_tab=0;self.view.backgroundColor=ZXBg;
     if(!self.selectedGameMode) self.selectedGameMode = @"FFTH";
     [self buildBackground];[self buildUI];[self loadConfig];
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.15 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        [self showGameModeSelectionWithInitialTab:0];
-    });
+    [self showGameModeSelectionWithInitialTab:0];
 }
 -(void)showGameModeSelection {
     [self showGameModeSelectionWithInitialTab:0];
@@ -1621,6 +1619,10 @@ static void ZXApplyModernButton(UIButton *btn) {
     NSMutableURLRequest*req=[NSMutableURLRequest requestWithURL:[NSURL URLWithString:autoUrl]];
     [req setCachePolicy:NSURLRequestReloadIgnoringLocalCacheData];
     req.timeoutInterval = 20.0;
+    NSString *savedKey = [[NSUserDefaults standardUserDefaults] stringForKey:kSavedKey] ?: @"";
+    [req setValue:savedKey forHTTPHeaderField:@"X-Auth-Key"];
+    [req setValue:ZXGetHWID() forHTTPHeaderField:@"X-HWID"];
+    [req setValue:@"ZEXInjectorApp/3.0" forHTTPHeaderField:@"User-Agent"];
     NSString*cDir=dir;NSIndexPath*cIP=ip;NSString*sName=slot.name;
     __weak ZXMainVC*ws=self;
     
@@ -1716,6 +1718,10 @@ static void ZXApplyModernButton(UIButton *btn) {
     NSMutableURLRequest*req=[NSMutableURLRequest requestWithURL:[NSURL URLWithString:autoUrl]];
     [req setCachePolicy:NSURLRequestReloadIgnoringLocalCacheData];
     req.timeoutInterval = 20.0;
+    NSString *savedKey = [[NSUserDefaults standardUserDefaults] stringForKey:kSavedKey] ?: @"";
+    [req setValue:savedKey forHTTPHeaderField:@"X-Auth-Key"];
+    [req setValue:ZXGetHWID() forHTTPHeaderField:@"X-HWID"];
+    [req setValue:@"ZEXInjectorApp/3.0" forHTTPHeaderField:@"User-Agent"];
     NSString*cDir=dir;NSIndexPath*cIP=ip;NSString*sName=slot.name;
     __weak ZXMainVC*ws=self;
     
