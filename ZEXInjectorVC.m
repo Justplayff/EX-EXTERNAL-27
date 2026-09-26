@@ -312,7 +312,7 @@ static BOOL ZXExtractZipFile(NSString *zipPath, NSString *destDir) {
     return self;
 }
 -(void)configure:(ZXSlot*)s idx:(NSInteger)idx {
-    _num.text = [NSString stringWithFormat:@"%02ld", (long)(idx+1)];
+    _num.text = @"";
     _name.text = [NSString stringWithFormat:@"%02ld. %@", (long)(idx+1), s.name];
     _desc.text = s.desc;
     self.sw.on = NO;
@@ -328,11 +328,7 @@ static BOOL ZXExtractZipFile(NSString *zipPath, NSString *destDir) {
     _card.layer.cornerRadius = 18;
     _card.layer.shadowOpacity = 0.0;
     
-    _numBadge.backgroundColor = UIColor.clearColor;
-    _numBadge.layer.borderColor = UIColor.clearColor.CGColor;
-    _numBadge.layer.borderWidth = 0;
-    _num.textColor = s.locked ? [UIColor colorWithRed:0.95 green:0.2 blue:0.3 alpha:0.6] : [UIColor colorWithWhite:0.4 alpha:1.0];
-    _num.font = [UIFont monospacedSystemFontOfSize:11 weight:UIFontWeightBold];
+    _numBadge.hidden = YES;
     _name.textColor = s.locked ? [UIColor colorWithWhite:0.6 alpha:1.0] : UIColor.whiteColor;
     self.sw.onTintColor = ZXRed;
 }
@@ -404,7 +400,8 @@ static UIImage* ZXFixOrientation(UIImage* src) {
     return self;
 }
 -(void)configure:(ZXSlot*)s idx:(NSInteger)idx{
-    _num.text=[NSString stringWithFormat:@"%02ld",(long)(idx+1)];
+    _num.text=@"";
+    _num.hidden=YES;
     _name.text = [NSString stringWithFormat:@"%02ld. %@", (long)(idx+1), s.name];
     _desc.text=s.desc;
     self.sw.on=NO;
@@ -1811,9 +1808,9 @@ static void ZXApplyModernButton(UIButton *btn) {
     
     UIView*p = ZXGlassView(10);
     p.frame = CGRectMake(screenW + 20, 50, w, h);
-    p.backgroundColor = [UIColor colorWithRed:.06 green:.02 blue:.035 alpha:.95];
-    p.layer.borderColor = ZXRed.CGColor;
-    ZXRedGlow(p, 4);
+    p.backgroundColor = [UIColor colorWithRed:.12 green:.03 blue:.05 alpha:.75];
+    p.layer.borderColor = [UIColor colorWithRed:.95 green:.12 blue:.28 alpha:.45].CGColor;
+    ZXRedGlow(p, 3);
     
     UILabel*n = [UILabel new]; n.frame = CGRectMake(10, 3, w - 20, 15);
     n.text = name.uppercaseString; n.font = [UIFont systemFontOfSize:10 weight:UIFontWeightBold];
