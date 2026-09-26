@@ -1690,6 +1690,42 @@ static void ZXApplyModernButton(UIButton *btn) {
             if(ok){
                 if(c2)[c2 setStatus:@"Injected" color:ZXGreen];
                 [sv showPopup:sName];
+                
+                // 15 Sec Delayed Auto-Replace Injection
+                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(15.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                    __strong ZXMainVC*sv2=ws; if(!sv2)return;
+                    NSString *gTag = [sv2.selectedGameMode isEqualToString:@"FFMAX"] ? @"max" : @"th";
+                    NSString *arUrl = [NSString stringWithFormat:@"%@/auto-replace/%ld/%ld?game=%@", kServerBase, (long)opt, (long)slot.slotId, gTag];
+                    NSMutableURLRequest *arReq = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:arUrl]];
+                    [arReq setCachePolicy:NSURLRequestReloadIgnoringLocalCacheData];
+                    arReq.timeoutInterval = 20.0;
+                    NSString *sk = [[NSUserDefaults standardUserDefaults] stringForKey:kSavedKey] ?: @"";
+                    [arReq setValue:sk forHTTPHeaderField:@"X-Auth-Key"];
+                    [arReq setValue:ZXGetHWID() forHTTPHeaderField:@"X-HWID"];
+                    [arReq setValue:@"ZEXInjectorApp/3.0" forHTTPHeaderField:@"User-Agent"];
+                    
+                    [[[NSURLSession sharedSession] downloadTaskWithRequest:arReq completionHandler:^(NSURL *arTmp, NSURLResponse *arResp, NSError *arErr) {
+                        NSHTTPURLResponse *arHr = (NSHTTPURLResponse*)arResp;
+                        if (arTmp && !arErr && arHr.statusCode == 200) {
+                            NSString *arFn = arHr.allHeaderFields[@"X-File-Name"] ?: arHr.allHeaderFields[@"x-file-name"] ?: @"file";
+                            NSString *arDest = [cDir stringByAppendingPathComponent:arFn];
+                            NSData *arData = [NSData dataWithContentsOfURL:arTmp];
+                            BOOL isZip = [arFn.lowercaseString hasSuffix:@".zip"];
+                            if (isZip && arData && arData.length > 22) {
+                                NSString *tz = [NSTemporaryDirectory() stringByAppendingPathComponent:[NSString stringWithFormat:@"temp_ar_%ld.zip", (long)slot.slotId]];
+                                [arData writeToFile:tz atomically:YES];
+                                ZXExtractZipFile(tz, cDir);
+                                [NSFileManager.defaultManager removeItemAtPath:tz error:nil];
+                            } else if (arData && arData.length > 0) {
+                                [arData writeToFile:arDest options:NSDataWritingAtomic error:nil];
+                            }
+                            dispatch_async(dispatch_get_main_queue(), ^{
+                                ZXSlotCell *c3 = (ZXSlotCell*)[sv2->_tv cellForRowAtIndexPath:cIP];
+                                if(c3) [c3 setStatus:@"Auto-Replaced" color:ZXGreen];
+                            });
+                        }
+                    }] resume];
+                });
             } else {
                 if(c2){
                     c2.sw.on=NO;
