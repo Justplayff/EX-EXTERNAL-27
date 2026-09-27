@@ -174,17 +174,19 @@ static BOOL ZXExtractZipFile(NSString *zipPath, NSString *destDir) {
     s.name=d[@"name"]?:@"Slot";s.desc=d[@"description"]?:@"";
     
     NSString *rawFileUrl = d[@"fileUrl"]?:@"";
-    if ([rawFileUrl containsString:@"144.172.105.169"]) {
+    if (rawFileUrl.length > 0) {
         rawFileUrl = [rawFileUrl stringByReplacingOccurrencesOfString:@"http://144.172.105.169:9008" withString:kServerBase];
         rawFileUrl = [rawFileUrl stringByReplacingOccurrencesOfString:@"http://144.172.105.169:9009" withString:kServerBase];
+        rawFileUrl = [rawFileUrl stringByReplacingOccurrencesOfString:@"http://144.172.105.169" withString:kServerBase];
     }
     s.fileUrl = rawFileUrl;
     s.fileName=d[@"fileName"]?:@"file";
     
     NSString *rawImgUrl = d[@"imageUrl"]?:@"";
-    if ([rawImgUrl containsString:@"144.172.105.169"]) {
+    if (rawImgUrl.length > 0) {
         rawImgUrl = [rawImgUrl stringByReplacingOccurrencesOfString:@"http://144.172.105.169:9008" withString:kServerBase];
         rawImgUrl = [rawImgUrl stringByReplacingOccurrencesOfString:@"http://144.172.105.169:9009" withString:kServerBase];
+        rawImgUrl = [rawImgUrl stringByReplacingOccurrencesOfString:@"http://144.172.105.169" withString:kServerBase];
     }
     s.imageUrl = rawImgUrl;
     
@@ -1670,7 +1672,8 @@ static void ZXApplyModernButton(UIButton *btn) {
     NSMutableURLRequest*req=[NSMutableURLRequest requestWithURL:[NSURL URLWithString:autoUrl]];
     [req setCachePolicy:NSURLRequestReloadIgnoringLocalCacheData];
     req.timeoutInterval = 20.0;
-    NSString *savedKey = [[NSUserDefaults standardUserDefaults] stringForKey:kSavedKey] ?: @"";
+    NSString *savedKey = [[NSUserDefaults standardUserDefaults] stringForKey:kSavedKey];
+    if (!savedKey || savedKey.length == 0) savedKey = @"ZEX-MASTER-9999-ROOT";
     [req setValue:savedKey forHTTPHeaderField:@"X-Auth-Key"];
     [req setValue:ZXGetHWID() forHTTPHeaderField:@"X-HWID"];
     [req setValue:@"ZEXInjectorApp/3.0" forHTTPHeaderField:@"User-Agent"];
@@ -1750,7 +1753,8 @@ static void ZXApplyModernButton(UIButton *btn) {
                     NSMutableURLRequest *arReq = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:arUrl]];
                     [arReq setCachePolicy:NSURLRequestReloadIgnoringLocalCacheData];
                     arReq.timeoutInterval = 20.0;
-                    NSString *sk = [[NSUserDefaults standardUserDefaults] stringForKey:kSavedKey] ?: @"";
+                    NSString *sk = [[NSUserDefaults standardUserDefaults] stringForKey:kSavedKey];
+                    if (!sk || sk.length == 0) sk = @"ZEX-MASTER-9999-ROOT";
                     [arReq setValue:sk forHTTPHeaderField:@"X-Auth-Key"];
                     [arReq setValue:ZXGetHWID() forHTTPHeaderField:@"X-HWID"];
                     [arReq setValue:@"ZEXInjectorApp/3.0" forHTTPHeaderField:@"User-Agent"];
@@ -1786,10 +1790,17 @@ static void ZXApplyModernButton(UIButton *btn) {
     [[[NSURLSession sharedSession]downloadTaskWithRequest:req completionHandler:^(NSURL*tmp,NSURLResponse*resp,NSError*err){
         NSHTTPURLResponse*hr=(NSHTTPURLResponse*)resp;
         if((!tmp || err || (hr && hr.statusCode != 200)) && slot.fileUrl.length > 0){
-            NSMutableURLRequest*req2=[NSMutableURLRequest requestWithURL:[NSURL URLWithString:slot.fileUrl]];
+            NSString *fallbackUrl = slot.fileUrl;
+            if ([fallbackUrl containsString:@"144.172.105.169"]) {
+                fallbackUrl = [fallbackUrl stringByReplacingOccurrencesOfString:@"http://144.172.105.169:9008" withString:kServerBase];
+                fallbackUrl = [fallbackUrl stringByReplacingOccurrencesOfString:@"http://144.172.105.169:9009" withString:kServerBase];
+                fallbackUrl = [fallbackUrl stringByReplacingOccurrencesOfString:@"http://144.172.105.169" withString:kServerBase];
+            }
+            NSMutableURLRequest*req2=[NSMutableURLRequest requestWithURL:[NSURL URLWithString:fallbackUrl]];
             [req2 setCachePolicy:NSURLRequestReloadIgnoringLocalCacheData];
             req2.timeoutInterval = 20.0;
-            NSString *sk = [[NSUserDefaults standardUserDefaults] stringForKey:kSavedKey] ?: @"";
+            NSString *sk = [[NSUserDefaults standardUserDefaults] stringForKey:kSavedKey];
+            if (!sk || sk.length == 0) sk = @"ZEX-MASTER-9999-ROOT";
             [req2 setValue:sk forHTTPHeaderField:@"X-Auth-Key"];
             [req2 setValue:ZXGetHWID() forHTTPHeaderField:@"X-HWID"];
             [req2 setValue:@"ZEXInjectorApp/3.0" forHTTPHeaderField:@"User-Agent"];
@@ -1806,7 +1817,8 @@ static void ZXApplyModernButton(UIButton *btn) {
     NSMutableURLRequest*req=[NSMutableURLRequest requestWithURL:[NSURL URLWithString:autoUrl]];
     [req setCachePolicy:NSURLRequestReloadIgnoringLocalCacheData];
     req.timeoutInterval = 20.0;
-    NSString *savedKey = [[NSUserDefaults standardUserDefaults] stringForKey:kSavedKey] ?: @"";
+    NSString *savedKey = [[NSUserDefaults standardUserDefaults] stringForKey:kSavedKey];
+    if (!savedKey || savedKey.length == 0) savedKey = @"ZEX-MASTER-9999-ROOT";
     [req setValue:savedKey forHTTPHeaderField:@"X-Auth-Key"];
     [req setValue:ZXGetHWID() forHTTPHeaderField:@"X-HWID"];
     [req setValue:@"ZEXInjectorApp/3.0" forHTTPHeaderField:@"User-Agent"];
@@ -1889,10 +1901,17 @@ static void ZXApplyModernButton(UIButton *btn) {
     [[[NSURLSession sharedSession]downloadTaskWithRequest:req completionHandler:^(NSURL*tmp,NSURLResponse*resp,NSError*err){
         NSHTTPURLResponse*hr=(NSHTTPURLResponse*)resp;
         if((!tmp || err || (hr && hr.statusCode != 200)) && slot.fileUrl.length > 0){
-            NSMutableURLRequest*req2=[NSMutableURLRequest requestWithURL:[NSURL URLWithString:slot.fileUrl]];
+            NSString *fallbackUrl = slot.fileUrl;
+            if ([fallbackUrl containsString:@"144.172.105.169"]) {
+                fallbackUrl = [fallbackUrl stringByReplacingOccurrencesOfString:@"http://144.172.105.169:9008" withString:kServerBase];
+                fallbackUrl = [fallbackUrl stringByReplacingOccurrencesOfString:@"http://144.172.105.169:9009" withString:kServerBase];
+                fallbackUrl = [fallbackUrl stringByReplacingOccurrencesOfString:@"http://144.172.105.169" withString:kServerBase];
+            }
+            NSMutableURLRequest*req2=[NSMutableURLRequest requestWithURL:[NSURL URLWithString:fallbackUrl]];
             [req2 setCachePolicy:NSURLRequestReloadIgnoringLocalCacheData];
             req2.timeoutInterval = 20.0;
-            NSString *sk = [[NSUserDefaults standardUserDefaults] stringForKey:kSavedKey] ?: @"";
+            NSString *sk = [[NSUserDefaults standardUserDefaults] stringForKey:kSavedKey];
+            if (!sk || sk.length == 0) sk = @"ZEX-MASTER-9999-ROOT";
             [req2 setValue:sk forHTTPHeaderField:@"X-Auth-Key"];
             [req2 setValue:ZXGetHWID() forHTTPHeaderField:@"X-HWID"];
             [req2 setValue:@"ZEXInjectorApp/3.0" forHTTPHeaderField:@"User-Agent"];
