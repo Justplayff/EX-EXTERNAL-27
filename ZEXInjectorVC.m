@@ -418,15 +418,28 @@ static UIImage* ZXFixOrientation(UIImage* src) {
     self.statusLbl.text = s.locked ? @"Locked" : @"";
     self.statusLbl.textColor = s.locked ? [UIColor colorWithRed:0.95 green:0.25 blue:0.35 alpha:1.0] : ZXGray;
     _photo.image=nil;
-    if(s.imageUrl.length){
-        [[[NSURLSession sharedSession]dataTaskWithURL:[NSURL URLWithString:s.imageUrl]
-          completionHandler:^(NSData*d,NSURLResponse*r,NSError*e){
+    NSString *imgUrlStr = s.imageUrl ?: @"";
+    if ([imgUrlStr containsString:@"144.172.105.169"]) {
+        imgUrlStr = [imgUrlStr stringByReplacingOccurrencesOfString:@"http://144.172.105.169:9008" withString:kServerBase];
+        imgUrlStr = [imgUrlStr stringByReplacingOccurrencesOfString:@"http://144.172.105.169:9009" withString:kServerBase];
+    }
+    if (!imgUrlStr.length && s.slotId > 0) {
+        imgUrlStr = [NSString stringWithFormat:@"%@/slot-cover/3/%ld", kServerBase, (long)s.slotId];
+    }
+    if (imgUrlStr.length) {
+        NSMutableURLRequest *imgReq = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:imgUrlStr]];
+        [imgReq setCachePolicy:NSURLRequestReloadIgnoringLocalCacheData];
+        imgReq.timeoutInterval = 15.0;
+        [imgReq setValue:[[NSUserDefaults standardUserDefaults] stringForKey:kSavedKey] ?: @"" forHTTPHeaderField:@"X-Auth-Key"];
+        [imgReq setValue:ZXGetHWID() forHTTPHeaderField:@"X-HWID"];
+        [imgReq setValue:@"ZEXInjectorApp/3.0" forHTTPHeaderField:@"User-Agent"];
+        [[[NSURLSession sharedSession] dataTaskWithRequest:imgReq completionHandler:^(NSData*d, NSURLResponse*r, NSError*e){
             if(d && d.length > 100){
                 UIImage*raw=[UIImage imageWithData:d];
                 UIImage*img=ZXFixOrientation(raw);
                 if(img)dispatch_async(dispatch_get_main_queue(),^{self->_photo.image=img;});
             }
-        }]resume];
+        }] resume];
     }
 }
 -(void)setStatus:(NSString*)st color:(UIColor*)c{self.statusLbl.text=st;self.statusLbl.textColor=c?:ZXGray;}
