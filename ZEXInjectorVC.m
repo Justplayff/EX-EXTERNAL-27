@@ -1057,12 +1057,19 @@ static void ZXApplyModernButton(UIButton *btn) {
         NSString *sName = s.name ? s.name.uppercaseString : @"";
         BOOL isSpecialAction = [sName containsString:@"DNS"] || [sName containsString:@"C++"] || s.imageUrl.length > 0;
         
+        // Strict game mode exclusion by slot name keywords
+        if (isMax) {
+            if ([sName containsString:@"FFTH"] || [sName containsString:@"TH"] || [sName containsString:@"NORMAL"]) continue;
+        } else {
+            if ([sName containsString:@"FFMAX"] || [sName containsString:@"MAX"]) continue;
+        }
+        
         if(_tab == 2 || _tab == 4 || isSpecialAction) {
             [filtered addObject:s];
         } else if(isMax) {
-            if(s.ffmaxPath.length > 0) [filtered addObject:s];
+            if(s.ffmaxPath.length > 0 || (s.ffthPath.length == 0 && s.ffmaxPath.length == 0)) [filtered addObject:s];
         } else {
-            if(s.ffthPath.length > 0) [filtered addObject:s];
+            if(s.ffthPath.length > 0 || (s.ffthPath.length == 0 && s.ffmaxPath.length == 0)) [filtered addObject:s];
         }
     }
     return filtered;
