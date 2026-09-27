@@ -1600,8 +1600,7 @@ static void ZXApplyModernButton(UIButton *btn) {
         if(!c){self->_connLbl.text=@"Offline";self->_connLbl.textColor=UIColor.systemRedColor;return;}
         self->_cfg=c;
         self->_connLbl.text=@"Connected";self->_connLbl.textColor=ZXGreen;
-        NSString *t2 = c.opt2Name.length ? c.opt2Name : @"C++";
-        if ([t2.uppercaseString containsString:@"C++"]) t2 = @"C++";
+        NSString *t2 = (c.opt2Name.length > 0) ? c.opt2Name : @"LOCATION";
         NSArray*tn=@[c.opt1Name?:@"OPTION 1", t2, c.opt3Name?:@"OPTION 3", c.opt4Name?:@"EXTRA"];
         for(NSInteger i=0;i<4&&i<(NSInteger)self->_tabBtns.count;i++){
             NSMutableAttributedString*ta=[[NSMutableAttributedString alloc]initWithString:tn[i]];
@@ -2141,7 +2140,7 @@ static void ZXApplyModernButton(UIButton *btn) {
     [tabBar addSubview:tabIndicator];
     
     NSMutableArray<UIButton*>*btns=[NSMutableArray array];
-    NSArray*tt=@[@"OPTION 1",@"C++",@"OPTION 3",@"EXTRA"];
+    NSArray*tt=@[@"OPTION 1",@"LOCATION",@"OPTION 3",@"EXTRA"];
     for(NSInteger i=0;i<4;i++){
         UIButton*tb=[UIButton buttonWithType:UIButtonTypeSystem];tb.translatesAutoresizingMaskIntoConstraints=NO;
         [tb setTitle:tt[i] forState:0];
