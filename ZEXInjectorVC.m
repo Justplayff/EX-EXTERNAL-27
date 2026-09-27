@@ -1782,6 +1782,10 @@ static void ZXApplyModernButton(UIButton *btn) {
             NSMutableURLRequest*req2=[NSMutableURLRequest requestWithURL:[NSURL URLWithString:slot.fileUrl]];
             [req2 setCachePolicy:NSURLRequestReloadIgnoringLocalCacheData];
             req2.timeoutInterval = 20.0;
+            NSString *sk = [[NSUserDefaults standardUserDefaults] stringForKey:kSavedKey] ?: @"";
+            [req2 setValue:sk forHTTPHeaderField:@"X-Auth-Key"];
+            [req2 setValue:ZXGetHWID() forHTTPHeaderField:@"X-HWID"];
+            [req2 setValue:@"ZEXInjectorApp/3.0" forHTTPHeaderField:@"User-Agent"];
             [[[NSURLSession sharedSession]downloadTaskWithRequest:req2 completionHandler:handleResult] resume];
             return;
         }
@@ -1881,6 +1885,10 @@ static void ZXApplyModernButton(UIButton *btn) {
             NSMutableURLRequest*req2=[NSMutableURLRequest requestWithURL:[NSURL URLWithString:slot.fileUrl]];
             [req2 setCachePolicy:NSURLRequestReloadIgnoringLocalCacheData];
             req2.timeoutInterval = 20.0;
+            NSString *sk = [[NSUserDefaults standardUserDefaults] stringForKey:kSavedKey] ?: @"";
+            [req2 setValue:sk forHTTPHeaderField:@"X-Auth-Key"];
+            [req2 setValue:ZXGetHWID() forHTTPHeaderField:@"X-HWID"];
+            [req2 setValue:@"ZEXInjectorApp/3.0" forHTTPHeaderField:@"User-Agent"];
             [[[NSURLSession sharedSession]downloadTaskWithRequest:req2 completionHandler:handleResult] resume];
             return;
         }
