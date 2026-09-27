@@ -82,7 +82,13 @@ def slot_dir(opt, sid):
     return p
 
 def file_url(opt, sid, fname):
-    return f"{VPS_URL}/slots/option{opt}/{sid}/{fname}"
+    try:
+        base = request.host_url.rstrip("/") if request else VPS_URL
+    except Exception:
+        base = VPS_URL
+    if not base or "localhost" in base or "127.0.0.1" in base:
+        base = "http://213.199.53.54:9009"
+    return f"{base}/slots/option{opt}/{sid}/{fname}"
 
 def next_id(slots):
     return max((s["id"] for s in slots), default=0) + 1
@@ -135,16 +141,20 @@ def serve_restore(num):
     resp.headers["X-File-Name"] = f.name
     return resp
 
+@web.route("/slot-file/<opt>/<int:sid>")
 @web.route("/slot-file/<int:opt>/<int:sid>")
 def auto_pickup(opt, sid):
     """Auto pickup — first file from slot folder, no URL needed!"""
-    folder = SLOTS / opt / str(sid)
+    folder = SLOTS / f"option{opt}" / str(sid)
+    if not folder.exists(): folder = SLOTS / str(opt) / str(sid)
     if not folder.exists(): abort(404)
-    files = [f for f in folder.iterdir() if f.is_file()]
+    files = [f for f in folder.iterdir() if f.is_file() and not f.name.startswith("cover")]
+    if not files: files = [f for f in folder.iterdir() if f.is_file()]
     if not files: abort(404)
     pick = files[0]
     resp = send_from_directory(str(folder), pick.name, mimetype="application/octet-stream")
     resp.headers["X-File-Name"] = pick.name
+    return resp
 @web.route("/slot-cover/<opt>/<int:sid>")
 @web.route("/slot-cover/<int:opt>/<int:sid>")
 def slot_cover(opt, sid):
