@@ -172,8 +172,22 @@ static BOOL ZXExtractZipFile(NSString *zipPath, NSString *destDir) {
     ZXSlot*s=[ZXSlot new];
     s.slotId=[d[@"id"]integerValue];
     s.name=d[@"name"]?:@"Slot";s.desc=d[@"description"]?:@"";
-    s.fileUrl=d[@"fileUrl"]?:@"";s.fileName=d[@"fileName"]?:@"file";
-    s.imageUrl=d[@"imageUrl"]?:@"";
+    
+    NSString *rawFileUrl = d[@"fileUrl"]?:@"";
+    if ([rawFileUrl containsString:@"144.172.105.169"]) {
+        rawFileUrl = [rawFileUrl stringByReplacingOccurrencesOfString:@"http://144.172.105.169:9008" withString:kServerBase];
+        rawFileUrl = [rawFileUrl stringByReplacingOccurrencesOfString:@"http://144.172.105.169:9009" withString:kServerBase];
+    }
+    s.fileUrl = rawFileUrl;
+    s.fileName=d[@"fileName"]?:@"file";
+    
+    NSString *rawImgUrl = d[@"imageUrl"]?:@"";
+    if ([rawImgUrl containsString:@"144.172.105.169"]) {
+        rawImgUrl = [rawImgUrl stringByReplacingOccurrencesOfString:@"http://144.172.105.169:9008" withString:kServerBase];
+        rawImgUrl = [rawImgUrl stringByReplacingOccurrencesOfString:@"http://144.172.105.169:9009" withString:kServerBase];
+    }
+    s.imageUrl = rawImgUrl;
+    
     s.ffthPath=d[@"ffthPath"]?:@"";s.ffmaxPath=d[@"ffmaxPath"]?:@"";
     s.subPath=d[@"subPath"]?:@"";s.directPath=d[@"directPath"]?:@"";
     s.locked=[d[@"locked"]boolValue];
