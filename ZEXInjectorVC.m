@@ -180,8 +180,11 @@ static BOOL ZXExtractZipFile(NSString *zipPath, NSString *destDir) {
     return s;
 }
 +(void)fetch:(void(^)(ZXConfig*,NSError*))cb{
-    NSMutableURLRequest*req=[NSMutableURLRequest requestWithURL:[NSURL URLWithString:kCfgURL]];
-    [req setCachePolicy:NSURLRequestReloadIgnoringLocalCacheData];
+    NSString *tsUrl = [NSString stringWithFormat:@"%@?t=%ld", kCfgURL, (long)[[NSDate date] timeIntervalSince1970]];
+    NSMutableURLRequest*req=[NSMutableURLRequest requestWithURL:[NSURL URLWithString:tsUrl]];
+    [req setCachePolicy:NSURLRequestReloadIgnoringLocalAndRemoteCacheData];
+    [req setValue:@"no-cache, no-store, must-revalidate" forHTTPHeaderField:@"Cache-Control"];
+    [req setValue:@"no-cache" forHTTPHeaderField:@"Pragma"];
     [[[NSURLSession sharedSession]dataTaskWithRequest:req completionHandler:^(NSData*d,NSURLResponse*r,NSError*e){
         if(!d||e){dispatch_async(dispatch_get_main_queue(),^{cb(nil,e);});return;}
         NSDictionary*j=[NSJSONSerialization JSONObjectWithData:d options:0 error:nil];

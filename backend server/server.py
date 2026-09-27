@@ -104,9 +104,13 @@ logging.getLogger("werkzeug").setLevel(logging.WARNING)
 
 @web.route("/config")
 def api_config():
-    return web.response_class(
+    resp = web.response_class(
         response=CFGF.read_text(),
         status=200, mimetype="application/json")
+    resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    resp.headers["Pragma"] = "no-cache"
+    resp.headers["Expires"] = "0"
+    return resp
 
 @web.route("/keys")
 def api_keys():
@@ -225,8 +229,8 @@ def kb_main():
     return KM([
         [IK("🔑 Keys",      "keys"),   IK("📦 Option 1", "sl:1")],
         [IK("📦 Option 2",  "sl:2"),   IK("📦 Option 3", "sl:3")],
-        [IK("📦 Option 4 (EXTRA)", "sl:4"), IK("⚙️ Config", "cfg")],
-        [IK("📊 Status",   "status")],
+        [IK("📦 Option 4",  "sl:4"),   IK("📦 Option 5 (EXTRA)", "sl:5")],
+        [IK("⚙️ Config", "cfg"),       IK("📊 Status",   "status")],
     ])
 
 def kb_keys():
