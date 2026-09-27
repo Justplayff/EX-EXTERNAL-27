@@ -1037,22 +1037,7 @@ static void ZXApplyModernButton(UIButton *btn) {
 -(NSArray<ZXSlot*>*)currentSlots{
     if(!_cfg)return @[];
     NSArray<ZXSlot*>*raw = _tab==0?_cfg.opt1:_tab==1?_cfg.opt2:_tab==2?_cfg.opt3:_tab==3?_cfg.opt4:_cfg.opt5;
-    NSMutableArray<ZXSlot*>*filtered = [NSMutableArray array];
-    BOOL isMax = [self.selectedGameMode isEqualToString:@"FFMAX"];
-    for(ZXSlot* s in raw){
-        NSString *sName = s.name ? s.name.uppercaseString : @"";
-        BOOL isSpecialAction = [sName containsString:@"DNS"] || [sName containsString:@"C++"] || [sName containsString:@"LOCATION"] || s.imageUrl.length > 0;
-        BOOL noPathsSet = (s.ffthPath.length == 0 && s.ffmaxPath.length == 0);
-        
-        if(_tab == 2 || _tab == 4 || isSpecialAction || noPathsSet) {
-            [filtered addObject:s];
-        } else if(isMax) {
-            if(s.ffmaxPath.length > 0 || s.ffthPath.length > 0) [filtered addObject:s];
-        } else {
-            if(s.ffthPath.length > 0 || s.ffmaxPath.length > 0) [filtered addObject:s];
-        }
-    }
-    return filtered;
+    return raw ?: @[];
 }
 -(NSString*)mcmBase{
     NSString*r=ZEXFileService.shared.virtualRoot;
