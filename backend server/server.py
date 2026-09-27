@@ -141,8 +141,21 @@ def auto_pickup(opt, sid):
     pick = files[0]
     resp = send_from_directory(str(folder), pick.name, mimetype="application/octet-stream")
     resp.headers["X-File-Name"] = pick.name
-    return resp
-
+@web.route("/slot-cover/<opt>/<int:sid>")
+@web.route("/slot-cover/<int:opt>/<int:sid>")
+def slot_cover(opt, sid):
+    """Serve slot photo/cover image"""
+    folder = SLOTS / f"option{opt}" / str(sid)
+    if not folder.exists(): folder = SLOTS / str(opt) / str(sid)
+    if not folder.exists(): abort(404)
+    images = [f for f in folder.iterdir() if f.is_file() and f.suffix.lower() in [".jpg", ".jpeg", ".png", ".webp", ".gif"]]
+    if not images:
+        files = [f for f in folder.iterdir() if f.is_file()]
+        if not files: abort(404)
+        pick = files[0]
+    else:
+        pick = images[0]
+    return send_from_directory(str(folder), pick.name)
 
 @web.route("/slots/<opt>/<sid>/<path:filename>")
 @web.route("/get/<opt>/<sid>/<path:filename>")

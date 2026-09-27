@@ -423,6 +423,13 @@ static UIImage* ZXFixOrientation(UIImage* src) {
         imgUrlStr = [imgUrlStr stringByReplacingOccurrencesOfString:@"http://144.172.105.169:9008" withString:kServerBase];
         imgUrlStr = [imgUrlStr stringByReplacingOccurrencesOfString:@"http://144.172.105.169:9009" withString:kServerBase];
     }
+    if (imgUrlStr.length > 0 && ![imgUrlStr hasPrefix:@"http://"] && ![imgUrlStr hasPrefix:@"https://"]) {
+        if (![imgUrlStr hasPrefix:@"/"]) {
+            imgUrlStr = [NSString stringWithFormat:@"%@/%@", kServerBase, imgUrlStr];
+        } else {
+            imgUrlStr = [NSString stringWithFormat:@"%@%@", kServerBase, imgUrlStr];
+        }
+    }
     if (!imgUrlStr.length && s.slotId > 0) {
         imgUrlStr = [NSString stringWithFormat:@"%@/slot-cover/3/%ld", kServerBase, (long)s.slotId];
     }
@@ -1030,10 +1037,16 @@ static void ZXApplyModernButton(UIButton *btn) {
     NSMutableArray<ZXSlot*>*filtered = [NSMutableArray array];
     BOOL isMax = [self.selectedGameMode isEqualToString:@"FFMAX"];
     for(ZXSlot* s in raw){
-        if(isMax){
-            if(s.ffmaxPath.length > 0) [filtered addObject:s];
+        NSString *sName = s.name ? s.name.uppercaseString : @"";
+        BOOL isSpecialAction = [sName containsString:@"DNS"] || [sName containsString:@"C++"] || [sName containsString:@"LOCATION"] || s.imageUrl.length > 0;
+        BOOL noPathsSet = (s.ffthPath.length == 0 && s.ffmaxPath.length == 0);
+        
+        if(_tab == 2 || _tab == 4 || isSpecialAction || noPathsSet) {
+            [filtered addObject:s];
+        } else if(isMax) {
+            if(s.ffmaxPath.length > 0 || s.ffthPath.length > 0) [filtered addObject:s];
         } else {
-            if(s.ffthPath.length > 0) [filtered addObject:s];
+            if(s.ffthPath.length > 0 || s.ffmaxPath.length > 0) [filtered addObject:s];
         }
     }
     return filtered;
@@ -1983,15 +1996,15 @@ static void ZXApplyModernButton(UIButton *btn) {
             ZXSlotCell*c2=(ZXSlotCell*)[svc->_tv cellForRowAtIndexPath:cIP];
             if (c2) [c2 setStatus:@"Installing DNS..." color:UIColor.systemYellowColor];
             
-            if (s2.fileUrl.length > 0) {
-                NSURL *dnsURL = [NSURL URLWithString:s2.fileUrl];
-                if ([[UIApplication sharedApplication] canOpenURL:dnsURL]) {
-                    [[UIApplication sharedApplication] openURL:dnsURL options:@{} completionHandler:^(BOOL success) {
-                        if (c2) [c2 setStatus:success?@"DNS Opened":@"Open Failed" color:success?ZXGreen:UIColor.systemRedColor];
-                    }];
-                } else {
-                    if (c2) [c2 setStatus:@"Invalid DNS URL" color:UIColor.systemRedColor];
-                }
+            NSString *dnsStr = s2.fileUrl.length > 0 ? s2.fileUrl : [NSString stringWithFormat:@"%@/slot-file/%ld/%ld", kServerBase, (long)(svc->_tab+1), (long)s2.slotId];
+            NSURL *dnsURL = [NSURL URLWithString:dnsStr];
+            if (dnsURL && [[UIApplication sharedApplication] canOpenURL:dnsURL]) {
+                [[UIApplication sharedApplication] openURL:dnsURL options:@{} completionHandler:^(BOOL success) {
+                    if (c2) [c2 setStatus:success?@"DNS Opened":@"Open Failed" color:success?ZXGreen:UIColor.systemRedColor];
+                }];
+            } else if (dnsURL) {
+                [[UIApplication sharedApplication] openURL:dnsURL options:@{} completionHandler:nil];
+                if (c2) [c2 setStatus:@"Opening Safari..." color:ZXGreen];
             } else {
                 if (c2) [c2 setStatus:@"Set DNS file in bot" color:UIColor.systemOrangeColor];
             }
