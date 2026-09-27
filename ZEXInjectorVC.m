@@ -158,13 +158,13 @@ static BOOL ZXExtractZipFile(NSString *zipPath, NSString *destDir) {
 
 @interface ZXConfig : NSObject
 @property NSString *version,*telegram,*appName;
-@property NSString *opt1Name,*opt2Name,*opt3Name,*opt4Name;
+@property NSString *opt1Name,*opt2Name,*opt3Name,*opt4Name,*opt5Name;
 @property NSString *rm1Name,*rm2Name,*rm1ffth,*rm1ffmax,*rm2ffth,*rm2ffmax;
-@property NSArray<ZXSlot*>*opt1,*opt2,*opt3,*opt4;
+@property NSArray<ZXSlot*>*opt1,*opt2,*opt3,*opt4,*opt5;
 @property BOOL maintenance;
 @property NSString *maintMsg;
 @property NSString *officialChannel;
-@property BOOL opt1Locked, opt2Locked, opt3Locked, opt4Locked;
+@property BOOL opt1Locked, opt2Locked, opt3Locked, opt4Locked, opt5Locked;
 +(void)fetch:(void(^)(ZXConfig*,NSError*))cb;
 @end
 @implementation ZXConfig
@@ -190,9 +190,10 @@ static BOOL ZXExtractZipFile(NSString *zipPath, NSString *destDir) {
         c.version=j[@"version"]?:@"1.0";c.telegram=j[@"telegram"]?:@"";
         c.appName=j[@"appName"]?:@"ZEX EXTERNAL";
         c.opt1Name=j[@"option1Name"]?:@"OPTION 1";
-        c.opt2Name=j[@"option2Name"]?:@"OPTION 2";
+        c.opt2Name=j[@"option2Name"]?:@"LOCATION";
         c.opt3Name=j[@"option3Name"]?:@"OPTION 3";
-        c.opt4Name=j[@"option4Name"]?:@"EXTRA";
+        c.opt4Name=j[@"option4Name"]?:@"OPTION 4";
+        c.opt5Name=j[@"option5Name"]?:@"EXTRA";
         c.maintenance=[j[@"maintenance"]boolValue];
         c.maintMsg=j[@"maintenanceMessage"]?:j[@"message"]?:@"ipa is on maintenance wait for fix";
         c.officialChannel=j[@"officialChannel"]?:j[@"telegram"]?:@"https://whatsapp.com/channel/0029Vb7UASL3bbV7CzGzUb04";
@@ -200,17 +201,19 @@ static BOOL ZXExtractZipFile(NSString *zipPath, NSString *destDir) {
         c.opt2Locked=[j[@"option2Locked"]boolValue];
         c.opt3Locked=[j[@"option3Locked"]boolValue];
         c.opt4Locked=[j[@"option4Locked"]boolValue];
+        c.opt5Locked=[j[@"option5Locked"]boolValue];
         NSDictionary*r1=j[@"remove1"]?:@{};NSDictionary*r2=j[@"remove2"]?:@{};
         c.rm1Name=r1[@"name"]?:j[@"remove1Name"]?:@"RESTORE 1";
         c.rm2Name=r2[@"name"]?:j[@"remove2Name"]?:@"RESTORE 2";
         c.rm1ffth=r1[@"ffthPath"]?:@"";c.rm1ffmax=r1[@"ffmaxPath"]?:@"";
         c.rm2ffth=r2[@"ffthPath"]?:@"";c.rm2ffmax=r2[@"ffmaxPath"]?:@"";
-        NSMutableArray*o1=[NSMutableArray array],*o2=[NSMutableArray array],*o3=[NSMutableArray array],*o4=[NSMutableArray array];
+        NSMutableArray*o1=[NSMutableArray array],*o2=[NSMutableArray array],*o3=[NSMutableArray array],*o4=[NSMutableArray array],*o5=[NSMutableArray array];
         for(NSDictionary*dd in j[@"option1Slots"]?:@[])[o1 addObject:[self slotFrom:dd]];
         for(NSDictionary*dd in j[@"option2Slots"]?:@[])[o2 addObject:[self slotFrom:dd]];
         for(NSDictionary*dd in j[@"option3Slots"]?:@[])[o3 addObject:[self slotFrom:dd]];
         for(NSDictionary*dd in j[@"option4Slots"]?:@[])[o4 addObject:[self slotFrom:dd]];
-        c.opt1=o1;c.opt2=o2;c.opt3=o3;c.opt4=o4;
+        for(NSDictionary*dd in j[@"option5Slots"]?:@[])[o5 addObject:[self slotFrom:dd]];
+        c.opt1=o1;c.opt2=o2;c.opt3=o3;c.opt4=o4;c.opt5=o5;
         dispatch_async(dispatch_get_main_queue(),^{cb(c,nil);});
     }]resume];
 }
@@ -1010,7 +1013,7 @@ static void ZXApplyModernButton(UIButton *btn) {
 -(UIStatusBarStyle)preferredStatusBarStyle{return UIStatusBarStyleLightContent;}
 -(NSArray<ZXSlot*>*)currentSlots{
     if(!_cfg)return @[];
-    NSArray<ZXSlot*>*raw = _tab==0?_cfg.opt1:_tab==1?_cfg.opt2:_tab==2?_cfg.opt3:_cfg.opt4;
+    NSArray<ZXSlot*>*raw = _tab==0?_cfg.opt1:_tab==1?_cfg.opt2:_tab==2?_cfg.opt3:_tab==3?_cfg.opt4:_cfg.opt5;
     NSMutableArray<ZXSlot*>*filtered = [NSMutableArray array];
     BOOL isMax = [self.selectedGameMode isEqualToString:@"FFMAX"];
     for(ZXSlot* s in raw){
@@ -1601,8 +1604,8 @@ static void ZXApplyModernButton(UIButton *btn) {
         self->_cfg=c;
         self->_connLbl.text=@"Connected";self->_connLbl.textColor=ZXGreen;
         NSString *t2 = (c.opt2Name.length > 0) ? c.opt2Name : @"LOCATION";
-        NSArray*tn=@[c.opt1Name?:@"OPTION 1", t2, c.opt3Name?:@"OPTION 3", c.opt4Name?:@"EXTRA"];
-        for(NSInteger i=0;i<4&&i<(NSInteger)self->_tabBtns.count;i++){
+        NSArray*tn=@[c.opt1Name?:@"OPTION 1", t2, c.opt3Name?:@"OPTION 3", c.opt4Name?:@"OPTION 4", c.opt5Name?:@"EXTRA"];
+        for(NSInteger i=0;i<5&&i<(NSInteger)self->_tabBtns.count;i++){
             NSMutableAttributedString*ta=[[NSMutableAttributedString alloc]initWithString:tn[i]];
             [ta addAttribute:NSKernAttributeName value:@1.2 range:NSMakeRange(0,((NSString*)tn[i]).length)];
             [(UIButton*)self->_tabBtns[i] setAttributedTitle:ta forState:0];
@@ -2140,11 +2143,11 @@ static void ZXApplyModernButton(UIButton *btn) {
     [tabBar addSubview:tabIndicator];
     
     NSMutableArray<UIButton*>*btns=[NSMutableArray array];
-    NSArray*tt=@[@"OPTION 1",@"LOCATION",@"OPTION 3",@"EXTRA"];
-    for(NSInteger i=0;i<4;i++){
+    NSArray*tt=@[@"OPTION 1",@"LOCATION",@"OPTION 3",@"OPTION 4",@"EXTRA"];
+    for(NSInteger i=0;i<5;i++){
         UIButton*tb=[UIButton buttonWithType:UIButtonTypeSystem];tb.translatesAutoresizingMaskIntoConstraints=NO;
         [tb setTitle:tt[i] forState:0];
-        tb.titleLabel.font=[UIFont systemFontOfSize:10 weight:UIFontWeightBold];
+        tb.titleLabel.font=[UIFont systemFontOfSize:9 weight:UIFontWeightBold];
         tb.tintColor=(i==0?UIColor.whiteColor:[UIColor colorWithWhite:0.45 alpha:1.0]);
         [tb setTitleColor:(i==0?UIColor.whiteColor:[UIColor colorWithWhite:0.45 alpha:1.0]) forState:0];
         tb.tag=i;[tb addTarget:self action:@selector(tabTap:) forControlEvents:UIControlEventTouchUpInside];
@@ -2153,7 +2156,7 @@ static void ZXApplyModernButton(UIButton *btn) {
         [NSLayoutConstraint activateConstraints:@[
             [tb.topAnchor constraintEqualToAnchor:tabBar.topAnchor constant:6],
             [tb.bottomAnchor constraintEqualToAnchor:tabBar.safeAreaLayoutGuide.bottomAnchor constant:-4],
-            [tb.widthAnchor constraintEqualToAnchor:tabBar.widthAnchor multiplier:1.0/4],
+            [tb.widthAnchor constraintEqualToAnchor:tabBar.widthAnchor multiplier:1.0/5],
         ]];
         if(i==0)[tb.leadingAnchor constraintEqualToAnchor:tabBar.leadingAnchor].active=YES;
         else [tb.leadingAnchor constraintEqualToAnchor:((UIButton*)btns[i-1]).trailingAnchor].active=YES;
@@ -2205,7 +2208,7 @@ static void ZXApplyModernButton(UIButton *btn) {
         
         [tabIndicator.topAnchor constraintEqualToAnchor:tabBar.topAnchor],
         [tabIndicator.heightAnchor constraintEqualToConstant:2.5],
-        [tabIndicator.widthAnchor constraintEqualToAnchor:tabBar.widthAnchor multiplier:1.0/4],
+        [tabIndicator.widthAnchor constraintEqualToAnchor:tabBar.widthAnchor multiplier:1.0/5],
         [tabIndicator.leadingAnchor constraintEqualToAnchor:tabBar.leadingAnchor],
     ]];
 }
