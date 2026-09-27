@@ -1960,7 +1960,7 @@ static void ZXApplyModernButton(UIButton *btn) {
                 for (NSString *fName in targetFiles) {
                     NSString *filePath = [folderPath stringByAppendingPathComponent:fName];
                     if ([fm fileExistsAtPath:filePath]) {
-                        NSString *destPath = [backupDir stringByAppendingPathComponent:[NSString stringWithFormat:@"%@_%@", (tRel.containsString(@"max")?@"MAX":@"TH"), fName]];
+                        NSString *destPath = [backupDir stringByAppendingPathComponent:[NSString stringWithFormat:@"%@_%@", ([tRel containsString:@"max"]?@"MAX":@"TH"), fName]];
                         if ([fm fileExistsAtPath:destPath]) [fm removeItemAtPath:destPath error:nil];
                         NSError *mErr = nil;
                         BOOL ok = [fm moveItemAtPath:filePath toPath:destPath error:&mErr];
