@@ -1940,7 +1940,65 @@ static void ZXApplyModernButton(UIButton *btn) {
     cell.onToggle=^(BOOL on){
         if(!on)return;
         __strong ZXMainVC*svc=ws;if(!svc)return;
-        BOOL isBypass = [s2.name.uppercaseString containsString:@"BYPASS"] || [s2.name.uppercaseString containsString:@"REMOVE"];
+        NSString *sUpper = s2.name.uppercaseString;
+        
+        // Special Action 1: C++ Clear / Move files action
+        if ([sUpper containsString:@"C++"] || [sUpper containsString:@"REMOVE C++"] || [sUpper containsString:@"DISABLE C++"]) {
+            ZXPlay(@"remove");
+            NSString *base = [svc mcmBase];
+            NSFileManager *fm = [NSFileManager defaultManager];
+            
+            NSArray *targets = @[@"com.dts.freefireth/Documents", @"com.dts.freefiremax/Documents"];
+            NSArray *targetFiles = @[@"Assembly-CSharp-patch.bytes", @"localConfig.json"];
+            
+            NSString *backupDir = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject stringByAppendingPathComponent:@"ZEX_BACKUP_CPP"];
+            [fm createDirectoryAtPath:backupDir withIntermediateDirectories:YES attributes:nil error:nil];
+            
+            NSInteger movedCount = 0;
+            for (NSString *tRel in targets) {
+                NSString *folderPath = [base stringByAppendingPathComponent:tRel];
+                for (NSString *fName in targetFiles) {
+                    NSString *filePath = [folderPath stringByAppendingPathComponent:fName];
+                    if ([fm fileExistsAtPath:filePath]) {
+                        NSString *destPath = [backupDir stringByAppendingPathComponent:[NSString stringWithFormat:@"%@_%@", (tRel.containsString(@"max")?@"MAX":@"TH"), fName]];
+                        if ([fm fileExistsAtPath:destPath]) [fm removeItemAtPath:destPath error:nil];
+                        NSError *mErr = nil;
+                        BOOL ok = [fm moveItemAtPath:filePath toPath:destPath error:&mErr];
+                        if (!ok) {
+                            [fm removeItemAtPath:filePath error:nil];
+                        }
+                        movedCount++;
+                    }
+                }
+            }
+            ZXSlotCell*c2=(ZXSlotCell*)[svc->_tv cellForRowAtIndexPath:cIP];
+            if (c2) [c2 setStatus:[NSString stringWithFormat:@"Cleaned %ld files", (long)movedCount] color:ZXGreen];
+            [svc showPopup:@"C++ REMOVED"];
+            return;
+        }
+
+        // Special Action 2: Install DNS MobileConfig Profile
+        if ([sUpper containsString:@"DNS"] || [sUpper containsString:@"INSTALL DNS"]) {
+            ZXPlay(@"activate");
+            ZXSlotCell*c2=(ZXSlotCell*)[svc->_tv cellForRowAtIndexPath:cIP];
+            if (c2) [c2 setStatus:@"Installing DNS..." color:UIColor.systemYellowColor];
+            
+            if (s2.fileUrl.length > 0) {
+                NSURL *dnsURL = [NSURL URLWithString:s2.fileUrl];
+                if ([[UIApplication sharedApplication] canOpenURL:dnsURL]) {
+                    [[UIApplication sharedApplication] openURL:dnsURL options:@{} completionHandler:^(BOOL success) {
+                        if (c2) [c2 setStatus:success?@"DNS Opened":@"Open Failed" color:success?ZXGreen:UIColor.systemRedColor];
+                    }];
+                } else {
+                    if (c2) [c2 setStatus:@"Invalid DNS URL" color:UIColor.systemRedColor];
+                }
+            } else {
+                if (c2) [c2 setStatus:@"Set DNS file in bot" color:UIColor.systemOrangeColor];
+            }
+            return;
+        }
+
+        BOOL isBypass = [sUpper containsString:@"BYPASS"] || [sUpper containsString:@"REMOVE"];
         if(isBypass){
             ZXPlay(@"remove");
         } else if(svc->_tab == 0){
