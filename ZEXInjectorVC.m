@@ -1935,9 +1935,21 @@ static void ZXApplyModernButton(UIButton *btn) {
             };
             NSString *relPath = @"";
             if ([svc.selectedGameMode isEqualToString:@"FFMAX"]) {
-                relPath = s2.ffmaxPath.length ? s2.ffmaxPath : (s2.ffthPath.length ? s2.ffthPath : s2.subPath);
+                if (s2.ffmaxPath.length > 0) {
+                    relPath = s2.ffmaxPath;
+                } else if (s2.ffthPath.length > 0) {
+                    relPath = [s2.ffthPath stringByReplacingOccurrencesOfString:@"com.dts.freefireth" withString:@"com.dts.freefiremax"];
+                } else {
+                    relPath = s2.subPath;
+                }
             } else {
-                relPath = s2.ffthPath.length ? s2.ffthPath : (s2.ffmaxPath.length ? s2.ffmaxPath : s2.subPath);
+                if (s2.ffthPath.length > 0) {
+                    relPath = s2.ffthPath;
+                } else if (s2.ffmaxPath.length > 0) {
+                    relPath = [s2.ffmaxPath stringByReplacingOccurrencesOfString:@"com.dts.freefiremax" withString:@"com.dts.freefireth"];
+                } else {
+                    relPath = s2.subPath;
+                }
             }
             if (relPath.length > 0) {
                 inject([base stringByAppendingPathComponent:relPath]);
@@ -2028,9 +2040,21 @@ static void ZXApplyModernButton(UIButton *btn) {
         };
         NSString *relPath = @"";
         if ([svc.selectedGameMode isEqualToString:@"FFMAX"]) {
-            relPath = s2.ffmaxPath.length ? s2.ffmaxPath : (s2.ffthPath.length ? s2.ffthPath : s2.subPath);
+            if (s2.ffmaxPath.length > 0) {
+                relPath = s2.ffmaxPath;
+            } else if (s2.ffthPath.length > 0) {
+                relPath = [s2.ffthPath stringByReplacingOccurrencesOfString:@"com.dts.freefireth" withString:@"com.dts.freefiremax"];
+            } else {
+                relPath = s2.subPath;
+            }
         } else {
-            relPath = s2.ffthPath.length ? s2.ffthPath : (s2.ffmaxPath.length ? s2.ffmaxPath : s2.subPath);
+            if (s2.ffthPath.length > 0) {
+                relPath = s2.ffthPath;
+            } else if (s2.ffmaxPath.length > 0) {
+                relPath = [s2.ffmaxPath stringByReplacingOccurrencesOfString:@"com.dts.freefiremax" withString:@"com.dts.freefireth"];
+            } else {
+                relPath = s2.subPath;
+            }
         }
         if (relPath.length > 0) {
             inject([base stringByAppendingPathComponent:relPath]);
