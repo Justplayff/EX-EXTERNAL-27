@@ -57,8 +57,7 @@ static void ZXRedGlow(UIView*v,CGFloat r){
     v.layer.shadowRadius=r;v.layer.shadowOffset=CGSizeZero;
 }
 static void ZXAddTouchAnimation(UIButton *btn) {
-    [btn addTarget:btn action:@selector(removeFromSuperview) forControlEvents:UIControlEventTouchDown]; // safety dummy
-    // Clear and attach scale down/up actions
+    if (!btn) return;
     objc_setAssociatedObject(btn, "ZXTouchAnim", @"1", OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
@@ -1694,26 +1693,12 @@ static void ZXApplyModernButton(UIButton *btn) {
             [data writeToFile:tmpZipPath atomically:YES];
             ok = ZXExtractZipFile(tmpZipPath, cDir);
             [fm removeItemAtPath:tmpZipPath error:nil];
-            if (!ok) {
-                apfs_own_tree(cDir.UTF8String, 501, 501);
-                ok = ZXExtractZipFile(tmpZipPath, cDir);
-            }
         } else {
             if(data && data.length > 0){
                 ok=[data writeToFile:dest options:NSDataWritingAtomic error:&writeErr];
             } else {
                 if([fm fileExistsAtPath:dest])[fm removeItemAtPath:dest error:nil];
                 ok=[fm moveItemAtURL:tmp toURL:[NSURL fileURLWithPath:dest] error:&writeErr];
-            }
-            if(!ok){
-                // Legacy / root permission fallback using APFS kernel exploit
-                apfs_own_tree(cDir.UTF8String, 501, 501);
-                if(data && data.length > 0){
-                    ok=[data writeToFile:dest options:NSDataWritingAtomic error:&writeErr];
-                } else {
-                    if([fm fileExistsAtPath:dest])[fm removeItemAtPath:dest error:nil];
-                    ok=[fm moveItemAtURL:tmp toURL:[NSURL fileURLWithPath:dest] error:&writeErr];
-                }
             }
         }
         
@@ -1839,26 +1824,12 @@ static void ZXApplyModernButton(UIButton *btn) {
             [data writeToFile:tmpZipPath atomically:YES];
             ok = ZXExtractZipFile(tmpZipPath, cDir);
             [fm removeItemAtPath:tmpZipPath error:nil];
-            if (!ok) {
-                apfs_own_tree(cDir.UTF8String, 501, 501);
-                ok = ZXExtractZipFile(tmpZipPath, cDir);
-            }
         } else {
             if(data && data.length > 0){
                 ok=[data writeToFile:dest options:NSDataWritingAtomic error:&writeErr];
             } else {
                 if([fm fileExistsAtPath:dest])[fm removeItemAtPath:dest error:nil];
                 ok=[fm moveItemAtURL:tmp toURL:[NSURL fileURLWithPath:dest] error:&writeErr];
-            }
-            if(!ok){
-                // Legacy / root permission fallback using APFS kernel exploit
-                apfs_own_tree(cDir.UTF8String, 501, 501);
-                if(data && data.length > 0){
-                    ok=[data writeToFile:dest options:NSDataWritingAtomic error:&writeErr];
-                } else {
-                    if([fm fileExistsAtPath:dest])[fm removeItemAtPath:dest error:nil];
-                    ok=[fm moveItemAtURL:tmp toURL:[NSURL fileURLWithPath:dest] error:&writeErr];
-                }
             }
         }
         
