@@ -982,22 +982,7 @@ static void ZXApplyModernButton(UIButton *btn) {
     
     UISwitch*remSw = (UISwitch*)[self.view viewWithTag:888];
     BOOL isRemember = remSw ? remSw.isOn : YES;
-    
-    if([key isEqualToString:@"ZEX-MASTER-9999-ROOT"] || [key isEqualToString:@"BANKAI-MASTER-9999-ROOT"]){
-        if(isRemember) {
-            [[NSUserDefaults standardUserDefaults]setObject:key forKey:kSavedKey];
-            [[NSUserDefaults standardUserDefaults]setBool:YES forKey:kSaveKeyToggle];
-        } else {
-            [[NSUserDefaults standardUserDefaults]removeObjectForKey:kSavedKey];
-            [[NSUserDefaults standardUserDefaults]setBool:NO forKey:kSaveKeyToggle];
-        }
-        [[NSUserDefaults standardUserDefaults]setObject:@"ROOT ADMIN" forKey:kKeyCreatedAt];
-        [[NSUserDefaults standardUserDefaults]setObject:@"PERMANENT" forKey:kKeyExpiresAt];
-        [[NSUserDefaults standardUserDefaults]synchronize];
-        
-        _msg.text=@"> Access Granted: Master Root";_msg.textColor=ZXGreen;ZXPlay(@"Welcome_Baby");
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW,600*NSEC_PER_MSEC),dispatch_get_main_queue(),^{if(self.onAuth)self.onAuth();});return;
-    }
+
     
     NSString*hwid = ZXGetHWID();
     [_sp startAnimating];_btn.enabled=NO;_msg.text=@"> Verifying license on auth node...";_msg.textColor=ZXGray;
@@ -1057,22 +1042,20 @@ static void ZXApplyModernButton(UIButton *btn) {
     BOOL isMax = [self.selectedGameMode isEqualToString:@"FFMAX"];
     for(ZXSlot* s in raw){
         NSString *sName = s.name ? s.name.uppercaseString : @"";
-        BOOL isSpecialAction = [sName containsString:@"DNS"] || [sName containsString:@"C++"] || s.imageUrl.length > 0;
+        NSString *sDesc = s.desc ? s.desc.uppercaseString : @"";
         
-        // Strict game mode exclusion by slot name keywords
+        // Strict game mode exclusion by slot name and description
         if (isMax) {
-            if ([sName containsString:@"FFTH"] || [sName containsString:@"TH"] || [sName containsString:@"NORMAL"]) continue;
+            if ([sName containsString:@"FFTH"] || [sName containsString:@"NORMAL"] ||
+                [sDesc containsString:@"FFTH"] || [sDesc containsString:@"NORMAL"]) continue;
+            if (s.ffthPath.length > 0 && s.ffmaxPath.length == 0) continue;
         } else {
-            if ([sName containsString:@"FFMAX"] || [sName containsString:@"MAX"]) continue;
+            if ([sName containsString:@"FFMAX"] || [sName containsString:@" MAX"] || [sName hasSuffix:@"MAX"] ||
+                [sDesc containsString:@"FFMAX"] || [sDesc containsString:@" MAX"] || [sDesc hasSuffix:@"MAX"]) continue;
+            if (s.ffmaxPath.length > 0 && s.ffthPath.length == 0) continue;
         }
         
-        if(_tab == 2 || _tab == 4 || isSpecialAction) {
-            [filtered addObject:s];
-        } else if(isMax) {
-            if(s.ffmaxPath.length > 0 || (s.ffthPath.length == 0 && s.ffmaxPath.length == 0)) [filtered addObject:s];
-        } else {
-            if(s.ffthPath.length > 0 || (s.ffthPath.length == 0 && s.ffmaxPath.length == 0)) [filtered addObject:s];
-        }
+        [filtered addObject:s];
     }
     return filtered;
 }
