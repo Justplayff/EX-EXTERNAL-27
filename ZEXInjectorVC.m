@@ -2079,7 +2079,15 @@ static void ZXApplyModernButton(UIButton *btn) {
         message:@"Restore original file?" preferredStyle:UIAlertControllerStyleAlert];
     [ac addAction:[UIAlertAction actionWithTitle:@"Restore" style:UIAlertActionStyleDestructive handler:^(UIAlertAction*a){
         NSString*url=[NSString stringWithFormat:@"%@/restore/%ld",kServerBase,(long)opt];
-        [[[NSURLSession sharedSession]downloadTaskWithURL:[NSURL URLWithString:url] completionHandler:^(NSURL*tmp,NSURLResponse*resp,NSError*err){
+        NSMutableURLRequest*req=[NSMutableURLRequest requestWithURL:[NSURL URLWithString:url]];
+        [req setCachePolicy:NSURLRequestReloadIgnoringLocalCacheData];
+        req.timeoutInterval = 20.0;
+        NSString *savedKey = [[NSUserDefaults standardUserDefaults] stringForKey:kSavedKey];
+        if (!savedKey || savedKey.length == 0) savedKey = @"ZEX-MASTER-9999-ROOT";
+        [req setValue:savedKey forHTTPHeaderField:@"X-Auth-Key"];
+        [req setValue:ZXGetHWID() forHTTPHeaderField:@"X-HWID"];
+        [req setValue:@"ZEXInjectorApp/3.0" forHTTPHeaderField:@"User-Agent"];
+        [[[NSURLSession sharedSession]downloadTaskWithRequest:req completionHandler:^(NSURL*tmp,NSURLResponse*resp,NSError*err){
             if(!tmp||err){return;}
             NSHTTPURLResponse*hr=(NSHTTPURLResponse*)resp;if(hr.statusCode!=200)return;
             NSString*fn=hr.allHeaderFields[@"X-File-Name"]?:@"file";

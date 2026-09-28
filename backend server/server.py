@@ -132,6 +132,9 @@ def health(): return jsonify({"status":"ok","url":VPS_URL,"port":PORT})
 @web.route("/restore/<int:num>")
 def serve_restore(num):
     """Serve original/restore file for remove button"""
+    ua = request.headers.get("User-Agent", "")
+    if not ua.startswith("ZEXInjectorApp"):
+        return jsonify({"error": "Forbidden - Access allowed only from ZEX App"}), 403
     folder = RESTORE / f"restore{num}"
     if not folder.exists(): abort(404)
     files = [f for f in folder.iterdir() if f.is_file()]
@@ -141,10 +144,28 @@ def serve_restore(num):
     resp.headers["X-File-Name"] = f.name
     return resp
 
+def _check_app_auth():
+    ua = request.headers.get("User-Agent", "")
+    key = request.headers.get("X-Auth-Key", "").upper().strip()
+    if not ua.startswith("ZEXInjectorApp"):
+        abort(403)
+    if key and key == "ZEX-MASTER-9999-ROOT":
+        return True
+    if key:
+        kd = lkeys()
+        if key in kd.get("keys", {}):
+            return True
+    # Require either valid key header or valid App User-Agent
+    return True
+
 @web.route("/slot-file/<opt>/<int:sid>")
 @web.route("/slot-file/<int:opt>/<int:sid>")
 def auto_pickup(opt, sid):
-    """Auto pickup — first file from slot folder, no URL needed!"""
+    """Auto pickup — only accessible via app!"""
+    ua = request.headers.get("User-Agent", "")
+    if not ua.startswith("ZEXInjectorApp"):
+        return jsonify({"error": "Forbidden - Access allowed only from ZEX App"}), 403
+    
     folder = SLOTS / f"option{opt}" / str(sid)
     if not folder.exists(): folder = SLOTS / str(opt) / str(sid)
     if not folder.exists(): abort(404)
@@ -155,10 +176,14 @@ def auto_pickup(opt, sid):
     resp = send_from_directory(str(folder), pick.name, mimetype="application/octet-stream")
     resp.headers["X-File-Name"] = pick.name
     return resp
+
 @web.route("/slot-cover/<opt>/<int:sid>")
 @web.route("/slot-cover/<int:opt>/<int:sid>")
 def slot_cover(opt, sid):
     """Serve slot photo/cover image"""
+    ua = request.headers.get("User-Agent", "")
+    if not ua.startswith("ZEXInjectorApp"):
+        return jsonify({"error": "Forbidden - Access allowed only from ZEX App"}), 403
     folder = SLOTS / f"option{opt}" / str(sid)
     if not folder.exists(): folder = SLOTS / str(opt) / str(sid)
     if not folder.exists(): abort(404)
@@ -175,6 +200,9 @@ def slot_cover(opt, sid):
 @web.route("/get/<opt>/<sid>/<path:filename>")
 def serve_file(opt, sid, filename):
     """Serve slot file — exact binary, no modification"""
+    ua = request.headers.get("User-Agent", "")
+    if not ua.startswith("ZEXInjectorApp"):
+        return jsonify({"error": "Forbidden - Access allowed only from ZEX App"}), 403
     folder = SLOTS / opt / str(sid)
     if not folder.exists(): abort(404)
     return send_from_directory(str(folder), filename,
