@@ -71,7 +71,7 @@ def gen_key():
     c=string.ascii_uppercase+string.digits
     return "ZEX-"+"".join(random.choices(c,k=4))+"-"+"".join(random.choices(c,k=4))+"-"+"".join(random.choices(c,k=4))
 
-DURATIONS={"1h":("1 Hour",3600),"30d":("30 Days",30*86400),"60d":("60 Days",60*86400),"90d":("90 Days",90*86400),"perm":("Permanent",0)}
+DURATIONS={"1h":("1 Hour",3600),"5d":("5 Days",5*86400),"30d":("30 Days",30*86400),"60d":("60 Days",60*86400),"90d":("90 Days",90*86400),"perm":("Permanent",0)}
 
 def lkeys(): return json.loads(KEYSF.read_text())
 def skeys(k): KEYSF.write_text(json.dumps(k, indent=2))
@@ -280,9 +280,9 @@ def kb_keys():
 
 def kb_duration():
     return KM([
-        [IK("1 Hour","dur:1h"),    IK("30 Days","dur:30d")],
-        [IK("60 Days","dur:60d"),  IK("90 Days","dur:90d")],
-        [IK("Permanent","dur:perm")],
+        [IK("1 Hour","dur:1h"),    IK("5 Days","dur:5d")],
+        [IK("30 Days","dur:30d"),  IK("60 Days","dur:60d")],
+        [IK("90 Days","dur:90d"),  IK("Permanent","dur:perm")],
         [IK("Back","keys")],
     ])
 
