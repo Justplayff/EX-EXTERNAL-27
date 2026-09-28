@@ -29,3 +29,12 @@ jobs:
         with:
           name: ZEX-PRO-IPA
           path: bankai-ZEXInjector.ipa
+
+      - name: Release IPA directly
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          files: bankai-ZEXInjector.ipa
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
