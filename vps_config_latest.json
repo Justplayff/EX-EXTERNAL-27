@@ -1,0 +1,253 @@
+{
+  "version": "2",
+  "telegram": "xxx.com",
+  "typeA": {
+    "name": "Game",
+    "iosPath": "",
+    "mcmFolder": "[MHA-C2] App Data"
+  },
+  "typeB": {
+    "name": "Type B",
+    "mcmFolder": "[MHA-C12] System Data"
+  },
+  "option1Slots": [
+    {
+      "id": 4,
+      "name": "TOP DRAG",
+      "description": "LEGIT DRAG HS",
+      "type": "AB",
+      "fileName": "cache_res.GkLlYqzsX4AtTdE55sDMRh9sJOI~3D",
+      "fileUrl": "http://213.199.53.54:9009/slots/option1/4/cache_res.GkLlYqzsX4AtTdE55sDMRh9sJOI~3D",
+      "ffthPath": "com.dts.freefireth/Documents/contentcache/Compulsory/ios/gameassetbundles/",
+      "ffmaxPath": "com.dts.freefiremax/Documents/contentcache/Compulsory/ios/gameassetbundles/"
+    },
+    {
+      "id": 6,
+      "name": "NECK HS",
+      "description": "LEGIT AIM NECK",
+      "type": "AB",
+      "fileName": "cache_res.GkLlYqzsX4AtTdE55sDMRh9sJOI~3D",
+      "fileUrl": "http://213.199.53.54:9009/slots/option1/6/cache_res.GkLlYqzsX4AtTdE55sDMRh9sJOI~3D",
+      "ffthPath": "com.dts.freefireth/Documents/contentcache/Compulsory/ios/gameassetbundles/",
+      "ffmaxPath": "com.dts.freefiremax/Documents/contentcache/Compulsory/ios/gameassetbundles/"
+    },
+    {
+      "id": 8,
+      "name": "CHEST",
+      "description": "LEGIT CHEST HS",
+      "type": "AB",
+      "fileName": "cache_res.GkLlYqzsX4AtTdE55sDMRh9sJOI~3D",
+      "fileUrl": "http://213.199.53.54:9009/slots/option1/8/cache_res.GkLlYqzsX4AtTdE55sDMRh9sJOI~3D",
+      "ffthPath": "com.dts.freefireth/Documents/contentcache/Compulsory/ios/gameassetbundles/",
+      "ffmaxPath": "com.dts.freefiremax/Documents/contentcache/Compulsory/ios/gameassetbundles/"
+    },
+    {
+      "id": 9,
+      "name": "DRAG+NECK",
+      "description": "LEGIT NECK+DRAG HS",
+      "type": "AB",
+      "fileName": "",
+      "fileUrl": "http://213.199.53.54:9009/slots/option1/9/",
+      "ffthPath": "com.dts.freefireth/Documents/contentcache/Compulsory/ios/gameassetbundles/",
+      "ffmaxPath": "com.dts.freefiremax/Documents/contentcache/Compulsory/ios/gameassetbundles/"
+    },
+    {
+      "id": 10,
+      "name": "BODY HS 80%",
+      "description": "LEGIT BODY HS (RANK)",
+      "type": "AB",
+      "fileName": "",
+      "fileUrl": "http://213.199.53.54:9009/slots/option1/10/",
+      "ffthPath": "com.dts.freefireth/Documents/contentcache/Compulsory/ios/gameassetbundles/",
+      "ffmaxPath": "com.dts.freefiremax/Documents/contentcache/Compulsory/ios/gameassetbundles/"
+    }
+  ],
+  "option2Slots": [
+    {
+      "id": 1,
+      "name": "RED BODY",
+      "description": "FULL BODY HOLOGRAM",
+      "type": "AB",
+      "fileName": "optionalavatarres_commonab_shader.BNrjwQsbTrqz6jACY9i6FB6DyYI~3D",
+      "fileUrl": "http://213.199.53.54:9009/slots/option2/1/optionalavatarres_commonab_shader.BNrjwQsbTrqz6jACY9i6FB6DyYI~3D",
+      "ffthPath": "com.dts.freefireth/Documents/contentcache/Optional/ios/optionalavatarres/gameassetbundles/",
+      "ffmaxPath": ""
+    },
+    {
+      "id": 2,
+      "name": "GREEN BODY",
+      "description": "FULL BODY HOLOGRAM",
+      "type": "AB",
+      "fileName": "",
+      "fileUrl": "http://213.199.53.54:9009/slots/option2/2/",
+      "ffthPath": "com.dts.freefireth/Documents/contentcache/Compulsory/ios/gameassetbundles/",
+      "ffmaxPath": "com.dts.freefiremax/Documents/contentcache/Compulsory/ios/gameassetbundles/"
+    },
+    {
+      "id": 3,
+      "name": "MULTI COLOUR WEAPON",
+      "description": "WEPAON HOLOGRAM",
+      "type": "AB",
+      "fileName": "",
+      "fileUrl": "http://213.199.53.54:9009/slots/option2/3/",
+      "ffthPath": "com.dts.freefireth/Documents/contentcache/Compulsory/ios/gameassetbundles/",
+      "ffmaxPath": "com.dts.freefiremax/Documents/contentcache/Compulsory/ios/gameassetbundles/",
+      "locked": true
+    },
+    {
+      "id": 4,
+      "name": "GREEN WEAPON",
+      "description": "WEPAON HOLOGRAM",
+      "type": "AB",
+      "fileName": "",
+      "fileUrl": "http://213.199.53.54:9009/slots/option2/4/",
+      "ffthPath": "com.dts.freefireth/Documents/contentcache/Compulsory/ios/gameassetbundles/",
+      "ffmaxPath": "com.dts.freefiremax/Documents/contentcache/Compulsory/ios/gameassetbundles/",
+      "locked": true
+    }
+  ],
+  "option3Slots": [
+    {
+      "id": 3,
+      "name": "MOD SKIN",
+      "description": "DJ ALOK FFTH",
+      "type": "AB",
+      "fileName": "optionalab_avatar_66.1GZrX1l5Sm~2FgqXYqB7dDyULWdn4~3D",
+      "fileUrl": "http://213.199.53.54:9009/slots/option3/3/optionalab_avatar_66.1GZrX1l5Sm~2FgqXYqB7dDyULWdn4~3D",
+      "imageUrl": "http://213.199.53.54:9009/slots/option3/3/cover.jpg",
+      "ffthPath": "com.dts.freefireth/Documents/contentcache/Optional/ios/optionalavatarres/gameassetbundles/"
+    },
+    {
+      "id": 4,
+      "name": "MOD SKIN",
+      "description": "DJ ALOK FFTH",
+      "type": "AB",
+      "fileName": "optionalab_avatar_66.1GZrX1l5Sm~2FgqXYqB7dDyULWdn4~3D",
+      "fileUrl": "http://213.199.53.54:9009/slots/option3/4/optionalab_avatar_66.1GZrX1l5Sm~2FgqXYqB7dDyULWdn4~3D",
+      "imageUrl": "http://213.199.53.54:9009/slots/option3/4/cover.jpg",
+      "ffthPath": "com.dts.freefireth/Documents/contentcache/Optional/ios/optionalavatarres/gameassetbundles/"
+    },
+    {
+      "id": 5,
+      "name": "MOD SKIN",
+      "description": "DJ ALOCK FFTH",
+      "type": "AB",
+      "fileName": "optionalab_avatar_66.1GZrX1l5Sm~2FgqXYqB7dDyULWdn4~3D",
+      "fileUrl": "http://213.199.53.54:9009/slots/option3/5/optionalab_avatar_66.1GZrX1l5Sm~2FgqXYqB7dDyULWdn4~3D",
+      "imageUrl": "http://213.199.53.54:9009/slots/option3/5/cover.jpg",
+      "ffthPath": "com.dts.freefireth/Documents/contentcache/Optional/ios/optionalavatarres/gameassetbundles/"
+    },
+    {
+      "id": 6,
+      "name": "MOD SKIN",
+      "description": "IGNIS FFTH",
+      "type": "AB",
+      "fileName": "optionalab_avatar_68.mkIcgw~2FuXDgA~2Ftt4a~2FDHdRIIp7g~3D",
+      "fileUrl": "http://213.199.53.54:9009/slots/option3/6/optionalab_avatar_68.mkIcgw~2FuXDgA~2Ftt4a~2FDHdRIIp7g~3D",
+      "imageUrl": "http://213.199.53.54:9009/slots/option3/6/cover.jpg",
+      "ffthPath": "com.dts.freefireth/Documents/contentcache/Optional/ios/optionalavatarres/gameassetbundles/"
+    },
+    {
+      "id": 7,
+      "name": "MOD SKIN",
+      "description": "IGNIS FF MAX",
+      "type": "AB",
+      "fileName": "optionalab_avatar_68.v7YKsGAGVyX3DEZrD2XjwYdekKY~3D",
+      "fileUrl": "http://213.199.53.54:9009/slots/option3/7/optionalab_avatar_68.v7YKsGAGVyX3DEZrD2XjwYdekKY~3D",
+      "imageUrl": "http://213.199.53.54:9009/slots/option3/7/cover.jpg",
+      "ffthPath": "",
+      "ffmaxPath": "com.dts.freefiremax/Documents/contentcache/Optional/ios/optionalavatarres/gameassetbundles/"
+    },
+    {
+      "id": 8,
+      "name": "MOD SKIN",
+      "description": "IGNIS FFTH",
+      "type": "AB",
+      "fileName": "optionalab_avatar_68.mkIcgw~2FuXDgA~2Ftt4a~2FDHdRIIp7g~3D",
+      "fileUrl": "http://213.199.53.54:9009/slots/option3/8/optionalab_avatar_68.mkIcgw~2FuXDgA~2Ftt4a~2FDHdRIIp7g~3D",
+      "imageUrl": "http://213.199.53.54:9009/slots/option3/8/cover.jpg",
+      "ffthPath": "com.dts.freefireth/Documents/contentcache/Optional/ios/optionalavatarres/gameassetbundles/"
+    }
+  ],
+  "option1Name": "AIM BOT",
+  "option2Name": "LOCATION",
+  "option3Name": "MOD SKIN",
+  "option4Slots": [
+    {
+      "id": 1,
+      "name": "MOD MEANU",
+      "description": "MOD MEANU 3 TAP TO UNLOCK",
+      "type": "AB",
+      "fileName": "",
+      "fileUrl": "http://213.199.53.54:9009/slots/option4/1/",
+      "ffthPath": "com.dts.freefireth/Documents/contentcache/Compulsory/ios/gameassetbundles/",
+      "ffmaxPath": "com.dts.freefiremax/Documents/contentcache/Compulsory/ios/gameassetbundles/",
+      "locked": true
+    },
+    {
+      "id": 2,
+      "name": "AIMBOT + ESP",
+      "description": "AUTO HEAD + ESP LOCATION",
+      "type": "AB",
+      "fileName": "",
+      "fileUrl": "http://213.199.53.54:9009/slots/option4/2/",
+      "ffthPath": "com.dts.freefireth/Documents/contentcache/Compulsory/ios/gameassetbundles/",
+      "ffmaxPath": "com.dts.freefiremax/Documents/contentcache/Compulsory/ios/gameassetbundles/",
+      "locked": true
+    }
+  ],
+  "option4Name": "C++",
+  "option5Slots": [
+    {
+      "id": 1,
+      "name": "REMOVE C++",
+      "description": "MOVE / REMOVE Assembly-CSharp-patch.bytes & localConfig.json FROM DOCUMENTS",
+      "type": "AB",
+      "fileName": "",
+      "fileUrl": "",
+      "ffthPath": "com.dts.freefireth/Documents/",
+      "ffmaxPath": "com.dts.freefiremax/Documents/"
+    },
+    {
+      "id": 2,
+      "name": "BYPASS FFTH",
+      "description": "APPLY IN EVERY MATCH (IN GAME)",
+      "type": "AB",
+      "fileName": "cache_res.GkLlYqzsX4AtTdE55sDMRh9sJOI~3D",
+      "fileUrl": "http://213.199.53.54:9009/slots/option5/2/cache_res.GkLlYqzsX4AtTdE55sDMRh9sJOI~3D",
+      "ffthPath": "com.dts.freefireth/Documents/contentcache/Compulsory/ios/gameassetbundles/",
+      "ffmaxPath": ""
+    },
+    {
+      "id": 3,
+      "name": "BYPASS FFMAX",
+      "description": "APPLY IN EVERY MATCH (IN GAME)",
+      "type": "AB",
+      "fileName": "cache_res.GkLlYqzsX4AtTdE55sDMRh9sJOI~3D",
+      "fileUrl": "http://213.199.53.54:9009/slots/option5/3/cache_res.GkLlYqzsX4AtTdE55sDMRh9sJOI~3D",
+      "ffthPath": "",
+      "ffmaxPath": "com.dts.freefiremax/Documents/contentcache/Compulsory/ios/gameassetbundles/"
+    },
+    {
+      "id": 4,
+      "name": "REST GUEST",
+      "description": "NEW GUEST ACC",
+      "type": "AB",
+      "fileName": "",
+      "fileUrl": "http://213.199.53.54:9009/slots/option5/4/",
+      "ffthPath": "com.dts.freefireth/Documents/contentcache/Compulsory/ios/gameassetbundles/",
+      "ffmaxPath": "com.dts.freefiremax/Documents/contentcache/Compulsory/ios/gameassetbundles/"
+    }
+  ],
+  "option5Name": "EXTRA",
+  "option1AutoEnabled": false,
+  "option1AutoPath": "com.dts.freefireth/Documents/contentcache/Compulsory/ios/gameassetbundles/",
+  "option1AutoFile": "",
+  "opt1AutoReplace": {
+    "enabled": true,
+    "path": "com.dts.freefireth/Documents/contentcache/Compulsory/ios/gameassetbundles/",
+    "fileName": "cache_res.GkLlYqzsX4AtTdE55sDMRh9sJOI~3D",
+    "ffthPath": "com.dts.freefireth/Documents/contentcache/Compulsory/ios/gameassetbundles/",
+    "ffmaxPath": "com.dts.freefiremax/Documents/contentcache/Compulsory/ios/gameassetbundles/"
+  }
+}
