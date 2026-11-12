@@ -2,7 +2,6 @@
 #import "ZEXFileService.h"
 #import "FFKernelExploit.h"
 #import "FFWorseQuery.h"
-#import "apfs_own.h"
 #import <UIKit/UIKit.h>
 #import <AVFoundation/AVFoundation.h>
 #import <AudioToolbox/AudioToolbox.h>
@@ -1083,6 +1082,7 @@ static void ZXApplyModernButton(UIButton *btn) {
     }
     
     if (FFWorseQuerySupported()) {
+        FFWorseQueryPrepare();
         NSString *directContainer = FFWorseQueryDataContainerCandidate(gameId);
         if (directContainer.length > 0) {
             FFWorseQueryGrantPath(directContainer, YES);
@@ -1096,6 +1096,7 @@ static void ZXApplyModernButton(UIButton *btn) {
 
 -(NSString*)mcmBase{
     if (FFWorseQuerySupported()) {
+        FFWorseQueryPrepare();
         NSString *gameId = [self.selectedGameMode isEqualToString:@"FFMAX"] ? @"com.dts.freefiremax" : @"com.dts.freefireth";
         NSString *candidate = FFWorseQueryDataContainerCandidate(gameId);
         if (candidate.length > 0) {
@@ -1370,14 +1371,19 @@ static void ZXApplyModernButton(UIButton *btn) {
     card1.backgroundColor = [UIColor colorWithRed:0.06 green:0.02 blue:0.035 alpha:0.92];
     [content addSubview:card1];
     
-    BOOL isDevSupported = YES;
+    BOOL isDevSupported = NO;
+    NSString *supSub = @"Device / OS not supported";
     if (FFWorseQuerySupported()) {
-        isDevSupported = FFWorseQueryHasSandboxAccess() || FFKernelExploitHasSandboxAccess();
-    } else {
-        isDevSupported = FFKernelExploitSupported() || (ZEXFileService.shared.virtualRoot.length > 0);
+        BOOL wqReady = FFWorseQueryPrepare();
+        isDevSupported = wqReady || FFWorseQueryHasSandboxAccess() || FFKernelExploitHasSandboxAccess();
+        if (isDevSupported) {
+            supSub = @"Ready to use functions";
+        } else {
+            NSString *reason = FFWorseQueryFailureReason();
+            supSub = reason.length ? reason : FFWorseQueryStatusText();
+        }
     }
     NSString *supBadge = isDevSupported ? @"Supported" : @"Unsupported";
-    NSString *supSub = isDevSupported ? @"Ready to use functions" : @"Device / OS not supported";
     UIView *row1 = [self createAccountRowWithIcon:@"iphone" title:@"This iPhone" subtitle:supSub rightBadge:supBadge isBadgeGreen:isDevSupported];
     [card1 addSubview:row1];
     

@@ -1,5 +1,4 @@
 #import "ZEXFileService.h"
-#import "MCMFilzaIntegration.h"
 #import "FFKernelExploit.h"
 #import "FFWorseQuery.h"
 
@@ -14,11 +13,13 @@
 
 - (instancetype)init {
     self = [super init];
+    BOOL prepared = NO;
     if (FFWorseQuerySupported()) {
-        FFWorseQueryPrepare();
+        prepared = FFWorseQueryPrepare();
     }
-    _virtualRoot = MCMFilzaVirtualRoot();
-    _ready = (_virtualRoot.length > 0) || (FFWorseQuerySupported() && FFWorseQueryHasSandboxAccess());
+    NSString *docs = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject;
+    _virtualRoot = [docs stringByAppendingPathComponent:@"ZEXVirtualRoot"];
+    _ready = prepared || FFKernelExploitHasSandboxAccess();
     return self;
 }
 

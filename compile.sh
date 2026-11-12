@@ -12,7 +12,7 @@ compile_file() {
     echo "Compiling $src..."
     clang -arch arm64 -isysroot "$SDK" -miphoneos-version-min=15.0 -fobjc-arc -Wno-everything \
       -DFF_3105_MCM=1 \
-      -I. -I./vendor/worse_query -I./kexploit -I./compat -I./XPF/src -I./XPF/external/ChOma/include \
+      -I. -I./vendor/worse_query \
       -c "$src" -o "$obj"
     OBJS+=("$obj")
 }
@@ -27,20 +27,6 @@ if [ -d "vendor" ]; then
     while IFS= read -r f; do
         [ -f "$f" ] && compile_file "$f"
     done < <(find vendor -type f \( -name "*.c" -o -name "*.m" \))
-fi
-
-# Compile kexploit directory files
-if [ -d "kexploit" ]; then
-    for f in kexploit/*.m kexploit/*.c; do
-        [ -f "$f" ] && compile_file "$f"
-    done
-fi
-
-# Compile XPF and ChOma files recursively
-if [ -d "XPF" ]; then
-    while IFS= read -r f; do
-        [ -f "$f" ] && compile_file "$f"
-    done < <(find XPF -type f \( -name "*.c" -o -name "*.m" \))
 fi
 
 echo "=== Linking Binary ==="
