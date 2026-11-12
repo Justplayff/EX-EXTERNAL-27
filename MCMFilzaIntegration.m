@@ -1,4 +1,6 @@
 #import "MCMFilzaIntegration.h"
+#import "FFKernelExploit.h"
+#import "FFWorseQuery.h"
 
 #import "MCMBridge.h"
 #import <fcntl.h>
@@ -333,6 +335,13 @@ static NSString *MCMActivateScoped(uint64_t containerClass, NSString *identifier
 
 NSString *MCMFilzaDataContainerPath(NSString *identifier, NSString **error)
 {
+    if (FFWorseQuerySupported()) {
+        NSString *candidate = FFWorseQueryDataContainerCandidate(identifier);
+        if (candidate.length > 0) {
+            FFWorseQueryGrantPath(candidate, YES);
+            return candidate;
+        }
+    }
     return MCMActivate(2, identifier, NO, error);
 }
 
@@ -354,6 +363,7 @@ BOOL MCMFilzaPathHasActiveLease(NSString *path)
 {
     if (path.length == 0 || !path.isAbsolutePath) return NO;
     if (gUnrestrictedFilesystem) return YES;
+    if (FFWorseQuerySupported() && FFWorseQueryHasSandboxAccess()) return YES;
     NSString *virtualRoot = MCMFilzaVirtualRoot();
     NSString *experimentalRoot = [virtualRoot
         stringByAppendingPathComponent:kMCMExperimentalDirectoryName];

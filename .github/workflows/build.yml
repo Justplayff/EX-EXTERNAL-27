@@ -1,4 +1,4 @@
-name: Build iOS IPA
+name: Build ZEX EXTERNAL IPA
 
 on:
   push:
@@ -30,14 +30,13 @@ jobs:
       - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ZEX-PRO-IPA
-          path: bankai-ZEXInjector.ipa
+          name: ZEX-EXTERNAL-IPA
+          path: ZEX_EXTERNAL.ipa
 
       - name: Release IPA directly
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
-          files: bankai-ZEXInjector.ipa
+          files: ZEX_EXTERNAL.ipa
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-

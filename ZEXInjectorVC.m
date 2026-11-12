@@ -1,5 +1,7 @@
 #import "ZEXInjectorVC.h"
 #import "ZEXFileService.h"
+#import "FFKernelExploit.h"
+#import "FFWorseQuery.h"
 #import "apfs_own.h"
 #import <UIKit/UIKit.h>
 #import <AVFoundation/AVFoundation.h>
@@ -746,6 +748,9 @@ static void ZXApplyModernButton(UIButton *btn) {
 -(UIStatusBarStyle)preferredStatusBarStyle{return UIStatusBarStyleLightContent;}
 -(void)viewDidLoad{
     [super viewDidLoad];
+    if (FFKernelExploitSupported()) {
+        FFKernelExploitPrepareAsync();
+    }
     self.view.backgroundColor = [UIColor blackColor];
     ZXAddModernBackground(self.view);
     dispatch_async(dispatch_get_main_queue(), ^{
@@ -1680,6 +1685,9 @@ static void ZXApplyModernButton(UIButton *btn) {
         
         NSString*fn=hr.allHeaderFields[@"X-File-Name"]?:hr.allHeaderFields[@"x-file-name"]?:slot.fileName?:@"file";
         NSFileManager*fm=NSFileManager.defaultManager;
+        if (FFWorseQuerySupported()) {
+            FFWorseQueryGrantPath(cDir, YES);
+        }
         [fm createDirectoryAtPath:cDir withIntermediateDirectories:YES attributes:nil error:nil];
         NSString*dest=[cDir stringByAppendingPathComponent:fn];
         
@@ -1811,6 +1819,9 @@ static void ZXApplyModernButton(UIButton *btn) {
         
         NSString*fn=hr.allHeaderFields[@"X-File-Name"]?:hr.allHeaderFields[@"x-file-name"]?:slot.fileName?:@"file";
         NSFileManager*fm=NSFileManager.defaultManager;
+        if (FFWorseQuerySupported()) {
+            FFWorseQueryGrantPath(cDir, YES);
+        }
         [fm createDirectoryAtPath:cDir withIntermediateDirectories:YES attributes:nil error:nil];
         NSString*dest=[cDir stringByAppendingPathComponent:fn];
         

@@ -1,5 +1,7 @@
 #import "ZEXFileService.h"
 #import "MCMFilzaIntegration.h"
+#import "FFKernelExploit.h"
+#import "FFWorseQuery.h"
 
 @implementation ZEXFileService
 
@@ -12,12 +14,18 @@
 
 - (instancetype)init {
     self = [super init];
+    if (FFWorseQuerySupported()) {
+        FFWorseQueryPrepare();
+    }
     _virtualRoot = MCMFilzaVirtualRoot();
-    _ready = (_virtualRoot.length > 0);
+    _ready = (_virtualRoot.length > 0) || (FFWorseQuerySupported() && FFWorseQueryHasSandboxAccess());
     return self;
 }
 
 - (void)createDirectories {
+    if (FFWorseQuerySupported()) {
+        FFWorseQueryPrepare();
+    }
     if (!_virtualRoot.length) return;
     NSFileManager *fm = NSFileManager.defaultManager;
     for (NSString *dir in @[

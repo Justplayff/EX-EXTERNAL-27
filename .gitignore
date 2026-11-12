@@ -1,4 +1,4 @@
-﻿# Theos build artifacts
+﻿# Build artifacts
 .theos/
 obj/
 packages/
@@ -20,3 +20,17 @@ Payload/
 build/
 DerivedData/
 *.xcuserstate
+
+# Local leftover artifacts
+build_art/
+build_art3/
+build_output/
+latest_ipa_extracted/
+out_fixed_ipa/
+out_ipa/
+out_ipa_dir/
+temp_build/
+ZEX-PRO-IPA/
+*.zip
+plink.exe
+install.log

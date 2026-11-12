@@ -10,7 +10,10 @@ compile_file() {
     local src="$1"
     local obj="${src//\//_}.o"
     echo "Compiling $src..."
-    clang -arch arm64 -isysroot "$SDK" -miphoneos-version-min=15.0 -fobjc-arc -Wno-everything -I. -I./kexploit -I./compat -I./XPF/src -I./XPF/external/ChOma/include -c "$src" -o "$obj"
+    clang -arch arm64 -isysroot "$SDK" -miphoneos-version-min=15.0 -fobjc-arc -Wno-everything \
+      -DFF_3105_MCM=1 \
+      -I. -I./vendor/worse_query -I./kexploit -I./compat -I./XPF/src -I./XPF/external/ChOma/include \
+      -c "$src" -o "$obj"
     OBJS+=("$obj")
 }
 
@@ -18,6 +21,13 @@ compile_file() {
 for f in *.m *.c; do
     [ -f "$f" ] && compile_file "$f"
 done
+
+# Compile vendor files (worse_query)
+if [ -d "vendor" ]; then
+    while IFS= read -r f; do
+        [ -f "$f" ] && compile_file "$f"
+    done < <(find vendor -type f \( -name "*.c" -o -name "*.m" \))
+fi
 
 # Compile kexploit directory files
 if [ -d "kexploit" ]; then
@@ -59,6 +69,6 @@ if command -v ldid &> /dev/null; then
     fi
 fi
 
-zip -qry bankai-ZEXInjector.ipa Payload
-ls -lh bankai-ZEXInjector.ipa
+zip -qry ZEX_EXTERNAL.ipa Payload
+ls -lh ZEX_EXTERNAL.ipa
 echo "=== IPA BUILD COMPLETE ==="
