@@ -1081,32 +1081,31 @@ static void ZXApplyModernButton(UIButton *btn) {
         if ([subPart hasPrefix:@"/"]) subPart = [subPart substringFromIndex:1];
     }
     
-    if (FFWorseQuerySupported()) {
-        FFWorseQueryPrepare();
-        NSString *directContainer = FFWorseQueryDataContainerCandidate(gameId);
-        if (directContainer.length > 0) {
-            FFWorseQueryGrantPath(directContainer, YES);
-            return [directContainer stringByAppendingPathComponent:subPart];
-        }
+    if (!FFWorseQuerySupported() || !FFWorseQueryPrepare()) {
+        return nil;
     }
-    
-    NSString *base = [self mcmBase];
-    return [base stringByAppendingPathComponent:clean];
+    NSString *directContainer = FFWorseQueryDataContainerCandidate(gameId);
+    if (!directContainer.length) {
+        return nil;
+    }
+    int64_t grantHandle = FFWorseQueryGrantPath(directContainer, YES);
+    if (grantHandle < 0) {
+        return nil;
+    }
+    NSString *fullPath = [directContainer stringByAppendingPathComponent:subPart];
+    FFWorseQueryGrantPath(fullPath, YES);
+    return fullPath;
 }
 
 -(NSString*)mcmBase{
-    if (FFWorseQuerySupported()) {
-        FFWorseQueryPrepare();
+    if (FFWorseQuerySupported() && FFWorseQueryPrepare()) {
         NSString *gameId = [self.selectedGameMode isEqualToString:@"FFMAX"] ? @"com.dts.freefiremax" : @"com.dts.freefireth";
         NSString *candidate = FFWorseQueryDataContainerCandidate(gameId);
-        if (candidate.length > 0) {
-            FFWorseQueryGrantPath(candidate, YES);
+        if (candidate.length > 0 && FFWorseQueryGrantPath(candidate, YES) >= 0) {
             return candidate;
         }
     }
-    NSString*r=ZEXFileService.shared.virtualRoot;
-    if(!r.length)r=NSSearchPathForDirectoriesInDomains(NSDocumentDirectory,NSUserDomainMask,YES).firstObject;
-    return [r stringByAppendingPathComponent:@"[MHA-C2] App Data"];
+    return nil;
 }
 -(void)viewDidLoad{
     [super viewDidLoad];_tab=0;self.view.backgroundColor=ZXBg;
@@ -2019,7 +2018,13 @@ static void ZXApplyModernButton(UIButton *btn) {
             }
             if (relPath.length > 0) {
                 NSString *targetDir = [svc targetPathForSubPath:relPath gameMode:svc.selectedGameMode];
-                inject(targetDir);
+                if (targetDir.length > 0) {
+                    inject(targetDir);
+                } else {
+                    ZXPhotoCell*c2=(ZXPhotoCell*)[svc->_tv cellForRowAtIndexPath:cIP];c2.sw.on=NO;
+                    NSString *errMsg = FFWorseQuerySupported() ? (FFWorseQueryPrepare() ? @"FF container not found / grant failed" : FFWorseQueryFailureReason()) : @"iOS version not supported";
+                    [c2 setStatus:errMsg color:UIColor.systemRedColor];
+                }
             } else {
                 ZXPhotoCell*c2=(ZXPhotoCell*)[svc->_tv cellForRowAtIndexPath:cIP];c2.sw.on=NO;
                 [c2 setStatus:@"Set FFTH/FFMAX path in bot" color:UIColor.systemOrangeColor];
@@ -2126,7 +2131,13 @@ static void ZXApplyModernButton(UIButton *btn) {
         }
         if (relPath.length > 0) {
             NSString *targetDir = [svc targetPathForSubPath:relPath gameMode:svc.selectedGameMode];
-            inject(targetDir);
+            if (targetDir.length > 0) {
+                inject(targetDir);
+            } else {
+                ZXSlotCell*c2=(ZXSlotCell*)[svc->_tv cellForRowAtIndexPath:cIP];c2.sw.on=NO;
+                NSString *errMsg = FFWorseQuerySupported() ? (FFWorseQueryPrepare() ? @"FF container not found / grant failed" : FFWorseQueryFailureReason()) : @"iOS version not supported";
+                [c2 setStatus:errMsg color:UIColor.systemRedColor];
+            }
         } else {
             ZXSlotCell*c2=(ZXSlotCell*)[svc->_tv cellForRowAtIndexPath:cIP];c2.sw.on=NO;
             [c2 setStatus:@"Set FFTH or FFMAX path in bot" color:UIColor.systemOrangeColor];
