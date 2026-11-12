@@ -1063,7 +1063,46 @@ static void ZXApplyModernButton(UIButton *btn) {
     }
     return filtered;
 }
+-(NSString*)targetPathForSubPath:(NSString*)relPath gameMode:(NSString*)mode {
+    if (!relPath.length) return nil;
+    NSString *clean = relPath;
+    if ([clean hasPrefix:@"/"]) clean = [clean substringFromIndex:1];
+    
+    // Normalize target identifier
+    BOOL isMax = [mode isEqualToString:@"FFMAX"];
+    NSString *gameId = isMax ? @"com.dts.freefiremax" : @"com.dts.freefireth";
+    
+    // Strip leading identifier if present in relative path
+    NSString *subPart = clean;
+    if ([subPart hasPrefix:@"com.dts.freefireth/"] || [subPart hasPrefix:@"com.dts.freefireth"]) {
+        subPart = [subPart substringFromIndex:MIN(subPart.length, 19)];
+        if ([subPart hasPrefix:@"/"]) subPart = [subPart substringFromIndex:1];
+    } else if ([subPart hasPrefix:@"com.dts.freefiremax/"] || [subPart hasPrefix:@"com.dts.freefiremax"]) {
+        subPart = [subPart substringFromIndex:MIN(subPart.length, 20)];
+        if ([subPart hasPrefix:@"/"]) subPart = [subPart substringFromIndex:1];
+    }
+    
+    if (FFWorseQuerySupported()) {
+        NSString *directContainer = FFWorseQueryDataContainerCandidate(gameId);
+        if (directContainer.length > 0) {
+            FFWorseQueryGrantPath(directContainer, YES);
+            return [directContainer stringByAppendingPathComponent:subPart];
+        }
+    }
+    
+    NSString *base = [self mcmBase];
+    return [base stringByAppendingPathComponent:clean];
+}
+
 -(NSString*)mcmBase{
+    if (FFWorseQuerySupported()) {
+        NSString *gameId = [self.selectedGameMode isEqualToString:@"FFMAX"] ? @"com.dts.freefiremax" : @"com.dts.freefireth";
+        NSString *candidate = FFWorseQueryDataContainerCandidate(gameId);
+        if (candidate.length > 0) {
+            FFWorseQueryGrantPath(candidate, YES);
+            return candidate;
+        }
+    }
     NSString*r=ZEXFileService.shared.virtualRoot;
     if(!r.length)r=NSSearchPathForDirectoriesInDomains(NSDocumentDirectory,NSUserDomainMask,YES).firstObject;
     return [r stringByAppendingPathComponent:@"[MHA-C2] App Data"];
@@ -1331,7 +1370,15 @@ static void ZXApplyModernButton(UIButton *btn) {
     card1.backgroundColor = [UIColor colorWithRed:0.06 green:0.02 blue:0.035 alpha:0.92];
     [content addSubview:card1];
     
-    UIView *row1 = [self createAccountRowWithIcon:@"iphone" title:@"This iPhone" subtitle:@"Ready to use functions" rightBadge:@"Supported" isBadgeGreen:YES];
+    BOOL isDevSupported = YES;
+    if (FFWorseQuerySupported()) {
+        isDevSupported = FFWorseQueryHasSandboxAccess() || FFKernelExploitHasSandboxAccess();
+    } else {
+        isDevSupported = FFKernelExploitSupported() || (ZEXFileService.shared.virtualRoot.length > 0);
+    }
+    NSString *supBadge = isDevSupported ? @"Supported" : @"Unsupported";
+    NSString *supSub = isDevSupported ? @"Ready to use functions" : @"Device / OS not supported";
+    UIView *row1 = [self createAccountRowWithIcon:@"iphone" title:@"This iPhone" subtitle:supSub rightBadge:supBadge isBadgeGreen:isDevSupported];
     [card1 addSubview:row1];
     
     UIView *row2 = [self createAccountRowWithIcon:@"cpu" title:@"Model" rightValue:[NSString stringWithFormat:@"iPhone (%@)", model]];
@@ -1965,7 +2012,8 @@ static void ZXApplyModernButton(UIButton *btn) {
                 }
             }
             if (relPath.length > 0) {
-                inject([base stringByAppendingPathComponent:relPath]);
+                NSString *targetDir = [svc targetPathForSubPath:relPath gameMode:svc.selectedGameMode];
+                inject(targetDir);
             } else {
                 ZXPhotoCell*c2=(ZXPhotoCell*)[svc->_tv cellForRowAtIndexPath:cIP];c2.sw.on=NO;
                 [c2 setStatus:@"Set FFTH/FFMAX path in bot" color:UIColor.systemOrangeColor];
@@ -1996,7 +2044,8 @@ static void ZXApplyModernButton(UIButton *btn) {
             
             NSInteger movedCount = 0;
             for (NSString *tRel in targets) {
-                NSString *folderPath = [base stringByAppendingPathComponent:tRel];
+                NSString *targetMode = [tRel containsString:@"max"] ? @"FFMAX" : @"FFTH";
+                NSString *folderPath = [svc targetPathForSubPath:tRel gameMode:targetMode];
                 for (NSString *fName in targetFiles) {
                     NSString *filePath = [folderPath stringByAppendingPathComponent:fName];
                     if ([fm fileExistsAtPath:filePath]) {
@@ -2070,7 +2119,8 @@ static void ZXApplyModernButton(UIButton *btn) {
             }
         }
         if (relPath.length > 0) {
-            inject([base stringByAppendingPathComponent:relPath]);
+            NSString *targetDir = [svc targetPathForSubPath:relPath gameMode:svc.selectedGameMode];
+            inject(targetDir);
         } else {
             ZXSlotCell*c2=(ZXSlotCell*)[svc->_tv cellForRowAtIndexPath:cIP];c2.sw.on=NO;
             [c2 setStatus:@"Set FFTH or FFMAX path in bot" color:UIColor.systemOrangeColor];
@@ -2110,7 +2160,8 @@ static void ZXApplyModernButton(UIButton *btn) {
             if(!data)return;
             for(NSString*pp in @[ffth,ffmax]){
                 if(!pp.length)continue;
-                NSString*dir=[base stringByAppendingPathComponent:pp];
+                NSString *targetMode = [pp containsString:@"max"] ? @"FFMAX" : @"FFTH";
+                NSString *dir = [self targetPathForSubPath:pp gameMode:targetMode];
                 [fm createDirectoryAtPath:dir withIntermediateDirectories:YES attributes:nil error:nil];
                 [data writeToFile:[dir stringByAppendingPathComponent:fn] atomically:YES];
             }
