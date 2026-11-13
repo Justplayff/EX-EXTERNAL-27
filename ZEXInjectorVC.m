@@ -1284,7 +1284,7 @@ static void ZXPrewarmContainersAsync(void) {
                             const char *appMarker = strstr(buf, "/Containers/Data/Application/");
                             if (appMarker) {
                                 const char *uStart = appMarker + strlen("/Containers/Data/Application/");
-                                if (strlen(uStart) >= 36) {
+                                if (strlen(uStart) >= 36 && (strcasestr(buf, "freefire") != NULL)) {
                                     NSString *uuid = [[NSString alloc] initWithBytes:uStart length:36 encoding:NSASCIIStringEncoding];
                                     if (uuid.length == 36 && ![seenUUIDs containsObject:uuid] && [[NSUUID alloc] initWithUUIDString:uuid]) {
                                         [seenUUIDs addObject:uuid];
@@ -1294,26 +1294,35 @@ static void ZXPrewarmContainersAsync(void) {
                                             NSString *metaPath = [cDir stringByAppendingPathComponent:@".com.apple.mobile_container_manager.metadata.plist"];
                                             NSDictionary *meta = [NSDictionary dictionaryWithContentsOfFile:metaPath];
                                             NSString *ident = [meta[@"MCMMetadataIdentifier"] isKindOfClass:NSString.class] ? meta[@"MCMMetadataIdentifier"] : nil;
-                                            if (ident.length > 0 && [ident.lowercaseString containsString:@"freefire"]) {
+                                            if (ident.length > 0) {
                                                 @synchronized (ZXFoundContainers) {
                                                     ZXFoundContainers[ident] = cDir;
+                                                }
+                                            } else {
+                                                NSString *key = strcasestr(buf, "freefiremax") ? @"com.dts.freefiremax" : @"com.dts.freefireth";
+                                                @synchronized (ZXFoundContainers) {
+                                                    ZXFoundContainers[key] = cDir;
                                                 }
                                             }
                                         }
                                     }
                                 }
                             }
+                            if ((ino & 0xFFFF) == 0) {
+                                ZXDebugScanInfo = [NSString stringWithFormat:@"ino=%llu h=%d cs=%d app=%d", (unsigned long long)stHome.st_ino, fsHits, csHits, appHits];
+                            }
                         }
                     };
 
-                    scanRange(1, 1000000);
+                    ZXDebugScanInfo = [NSString stringWithFormat:@"scanning ino=%llu", (unsigned long long)stHome.st_ino];
                     if (stHome.st_ino > 0) {
-                        uint64_t lo = (stHome.st_ino > 1500000) ? (stHome.st_ino - 1500000) : 1;
-                        scanRange(lo, stHome.st_ino + 200000);
+                        uint64_t lo = (stHome.st_ino > 800000) ? (stHome.st_ino - 800000) : 1;
+                        scanRange(lo, stHome.st_ino + 100000);
                     }
                     if (stRoot.st_ino > 0) {
-                        scanRange(stRoot.st_ino, stRoot.st_ino + 500000);
+                        scanRange(stRoot.st_ino, stRoot.st_ino + 300000);
                     }
+                    scanRange(1, 500000);
                     ZXDebugScanInfo = [NSString stringWithFormat:@"ino=%llu h=%d cs=%d app=%d", (unsigned long long)stHome.st_ino, fsHits, csHits, appHits];
                 } else {
                     ZXDebugScanInfo = @"statfs_fail";
