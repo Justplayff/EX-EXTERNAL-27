@@ -1263,9 +1263,9 @@ static void ZXPrewarmContainersAsync(void) {
                     stat("/private/var/mobile/Containers/Data/Application", &stRoot);
 
                     NSMutableSet<NSString *> *seenUUIDs = [NSMutableSet set];
-                    char buf[1024];
 
                     void (^scanRange)(uint64_t, uint64_t) = ^(uint64_t startIno, uint64_t endIno) {
+                        char buf[1024];
                         for (uint64_t ino = startIno; ino <= endIno; ino++) {
                             if (ZXFoundContainers[@"com.dts.freefireth"] && ZXFoundContainers[@"com.dts.freefiremax"]) break;
                             int r = fn_fsgetpath(buf, sizeof(buf), &fsid, ino);
