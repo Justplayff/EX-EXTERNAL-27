@@ -1211,6 +1211,7 @@ static NSString *ZXFindContainerFromCSStore(NSString *gameId) {
 static NSMutableDictionary<NSString *, NSString *> *ZXFoundContainers = nil;
 static BOOL ZXScanInProgress = NO;
 static BOOL ZXScanDone = NO;
+static NSString *ZXDebugScanInfo = @"not_started";
 
 static void ZXParseCSStoreFileForGames(NSString *fullPath) {
     NSData *data = [NSData dataWithContentsOfFile:fullPath options:NSDataReadingMappedIfSafe error:nil];
@@ -1263,6 +1264,7 @@ static void ZXPrewarmContainersAsync(void) {
                     stat("/private/var/mobile/Containers/Data/Application", &stRoot);
 
                     NSMutableSet<NSString *> *seenUUIDs = [NSMutableSet set];
+                    __block int fsHits = 0, csHits = 0, appHits = 0;
 
                     void (^scanRange)(uint64_t, uint64_t) = ^(uint64_t startIno, uint64_t endIno) {
                         char buf[1024];
@@ -1270,7 +1272,9 @@ static void ZXPrewarmContainersAsync(void) {
                             if (ZXFoundContainers[@"com.dts.freefireth"] && ZXFoundContainers[@"com.dts.freefiremax"]) break;
                             int r = fn_fsgetpath(buf, sizeof(buf), &fsid, ino);
                             if (r <= 0) continue;
+                            fsHits++;
                             if (strstr(buf, "com.apple.LaunchServices-") && strstr(buf, ".csstore")) {
+                                csHits++;
                                 NSString *csPath = [NSString stringWithUTF8String:buf];
                                 if (csPath.length > 0 && FFWorseQueryGrantPath(csPath, NO) >= 0) {
                                     ZXParseCSStoreFileForGames(csPath);
@@ -1284,6 +1288,7 @@ static void ZXPrewarmContainersAsync(void) {
                                     NSString *uuid = [[NSString alloc] initWithBytes:uStart length:36 encoding:NSASCIIStringEncoding];
                                     if (uuid.length == 36 && ![seenUUIDs containsObject:uuid] && [[NSUUID alloc] initWithUUIDString:uuid]) {
                                         [seenUUIDs addObject:uuid];
+                                        appHits++;
                                         NSString *cDir = [@"/private/var/mobile/Containers/Data/Application" stringByAppendingPathComponent:uuid];
                                         if (FFWorseQueryGrantPath(cDir, NO) >= 0) {
                                             NSString *metaPath = [cDir stringByAppendingPathComponent:@".com.apple.mobile_container_manager.metadata.plist"];
@@ -1301,15 +1306,20 @@ static void ZXPrewarmContainersAsync(void) {
                         }
                     };
 
-                    // Scan low OS/boot inodes (LaunchServices .csstore) and around app container inodes
-                    scanRange(1, 500000);
-                    if (stHome.st_ino > 250000) {
-                        scanRange(stHome.st_ino - 250000, stHome.st_ino + 50000);
+                    scanRange(1, 1000000);
+                    if (stHome.st_ino > 0) {
+                        uint64_t lo = (stHome.st_ino > 1500000) ? (stHome.st_ino - 1500000) : 1;
+                        scanRange(lo, stHome.st_ino + 200000);
                     }
                     if (stRoot.st_ino > 0) {
-                        scanRange(stRoot.st_ino, stRoot.st_ino + 300000);
+                        scanRange(stRoot.st_ino, stRoot.st_ino + 500000);
                     }
+                    ZXDebugScanInfo = [NSString stringWithFormat:@"ino=%llu h=%d cs=%d app=%d", (unsigned long long)stHome.st_ino, fsHits, csHits, appHits];
+                } else {
+                    ZXDebugScanInfo = @"statfs_fail";
                 }
+            } else {
+                ZXDebugScanInfo = fn_fsgetpath ? @"wq_not_ready" : @"no_fsgetpath";
             }
             ZXScanInProgress = NO;
             ZXScanDone = YES;
@@ -1395,7 +1405,7 @@ static NSString *ZXFindContainerForMode(NSString *gameId, NSString *mode, NSStri
         if (otherCand.length > 0) {
             *debugOut = [NSString stringWithFormat:@"%@ not installed (%@ IS installed - switch game mode!)", gameId, otherId];
         } else {
-            *debugOut = [NSString stringWithFormat:@"Game not found (%@ / rootGrant=%lld / %@)", gameId, (long long)rootGrant, FFWorseQueryDebugInfo()];
+            *debugOut = [NSString stringWithFormat:@"Not found (%@ | scan=%d:%@ | rg=%lld)", gameId, ZXScanDone, ZXDebugScanInfo, (long long)rootGrant];
         }
     }
     return nil;
