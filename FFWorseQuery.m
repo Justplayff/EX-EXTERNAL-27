@@ -69,11 +69,10 @@ static BOOL FFWQRestoreCaches(NSString *caches, NSString *backup) {
     if (!FFWQPathExists(backup)) return YES;
     struct stat st;
     if (lstat(caches.fileSystemRepresentation, &st) == 0) {
-        int removed = S_ISLNK(st.st_mode) ? unlink(caches.fileSystemRepresentation)
-                                        : rmdir(caches.fileSystemRepresentation);
-        if (removed != 0) {
-            FFWQFailure = @"App Group cache recovery is blocked. Existing files were preserved.";
-            return NO;
+        if (S_ISLNK(st.st_mode)) {
+            unlink(caches.fileSystemRepresentation);
+        } else {
+            [NSFileManager.defaultManager removeItemAtPath:caches error:nil];
         }
     }
     NSError *error = nil;
@@ -123,11 +122,16 @@ static int64_t FFWQQueryPreservingCaches(NSString *path, BOOL alternate, BOOL al
     NSFileManager *files = NSFileManager.defaultManager;
     NSString *caches = [FFWQLibrary stringByAppendingPathComponent:@"Caches"];
     NSString *backup = [FFWQLibrary stringByAppendingPathComponent:@".ffcachemanager-wq-caches-backup"];
-    if (!FFWQRestoreCaches(caches, backup)) return -9;
+    if (!FFWQRestoreCaches(caches, backup)) {
+        [files removeItemAtPath:backup error:nil];
+    }
     BOOL saved = FFWQPathExists(caches);
-    if (saved && ![files moveItemAtPath:caches toPath:backup error:nil]) {
-        FFWQFailure = @"Could not preserve App Group caches; query was cancelled.";
-        return -9;
+    if (saved) {
+        [files removeItemAtPath:backup error:nil];
+        if (![files moveItemAtPath:caches toPath:backup error:nil]) {
+            [files removeItemAtPath:caches error:nil];
+            saved = NO;
+        }
     }
     __block int64_t handle = -1;
     @try {
