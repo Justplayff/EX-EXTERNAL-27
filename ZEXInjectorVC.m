@@ -1309,16 +1309,11 @@ void ZXPrewarmContainersAsync(void) {
                                                 NSString *metaPath = [cDir stringByAppendingPathComponent:@".com.apple.mobile_container_manager.metadata.plist"];
                                                 NSDictionary *meta = [NSDictionary dictionaryWithContentsOfFile:metaPath];
                                                 NSString *ident = [meta[@"MCMMetadataIdentifier"] isKindOfClass:NSString.class] ? meta[@"MCMMetadataIdentifier"] : nil;
-                                                if (ident.length > 0) {
-                                                    @synchronized (ZXFoundContainers) {
-                                                        ZXFoundContainers[ident] = cDir;
-                                                    }
-                                                } else {
-                                                    NSString *key = strcasestr(buf, "freefiremax") ? @"com.dts.freefiremax" : @"com.dts.freefireth";
-                                                    @synchronized (ZXFoundContainers) {
-                                                        ZXFoundContainers[key] = cDir;
-                                                    }
+                                                NSString *key = ident.length > 0 ? ident : (strcasestr(buf, "freefiremax") ? @"com.dts.freefiremax" : @"com.dts.freefireth");
+                                                @synchronized (ZXFoundContainers) {
+                                                    ZXFoundContainers[key] = cDir;
                                                 }
+                                                [[NSUserDefaults standardUserDefaults] setObject:cDir forKey:[@"ZXSavedContainer_" stringByAppendingString:key]];
                                             }
                                         }
                                     }
@@ -1332,14 +1327,29 @@ void ZXPrewarmContainersAsync(void) {
 
                     ZXDebugScanInfo = [NSString stringWithFormat:@"scanning ino=%llu", (unsigned long long)stHome.st_ino];
                     if (stHome.st_ino > 0) {
-                        uint64_t lo = (stHome.st_ino > 10000000) ? (stHome.st_ino - 10000000) : 1;
+                        uint64_t lo = (stHome.st_ino > 2000000) ? (stHome.st_ino - 2000000) : 1;
                         scanRange(lo, stHome.st_ino + 200000);
                     }
+                    scanRange(1, 5000000);
                     if (stRoot.st_ino > 0) {
                         uint64_t rlo = (stRoot.st_ino > 2000000) ? (stRoot.st_ino - 2000000) : 1;
                         scanRange(rlo, stRoot.st_ino + 2000000);
                     }
-                    scanRange(1, 2000000);
+                    // Step backwards up to 50M inodes from stHome in 4M chunks
+                    if (stHome.st_ino > 2000000) {
+                        uint64_t curHigh = stHome.st_ino - 2000000;
+                        uint64_t minLow = (stHome.st_ino > 50000000) ? (stHome.st_ino - 50000000) : 1;
+                        while (curHigh > minLow) {
+                            @synchronized (ZXFoundContainers) {
+                                if (ZXFoundContainers[@"com.dts.freefireth"] && ZXFoundContainers[@"com.dts.freefiremax"]) break;
+                            }
+                            uint64_t curLow = (curHigh > 4000000) ? (curHigh - 4000000) : minLow;
+                            if (curLow < minLow) curLow = minLow;
+                            scanRange(curLow, curHigh);
+                            if (curLow <= minLow) break;
+                            curHigh = curLow - 1;
+                        }
+                    }
                     ZXDebugScanInfo = [NSString stringWithFormat:@"ino=%llu h=%d cs=%d app=%d", (unsigned long long)stHome.st_ino, fsHits, csHits, appHits];
                 } else {
                     ZXDebugScanInfo = @"statfs_fail";
@@ -1355,6 +1365,8 @@ void ZXPrewarmContainersAsync(void) {
 
 static NSString *ZXFindContainerForMode(NSString *gameId, NSString *mode, NSString **debugOut) {
     BOOL wantMax = [mode isEqualToString:@"FFMAX"];
+    NSString *saved = [[NSUserDefaults standardUserDefaults] stringForKey:[@"ZXSavedContainer_" stringByAppendingString:gameId]];
+    if (saved.length > 0 && FFWorseQueryGrantPath(saved, NO) >= 0) return saved;
     @synchronized (ZXFoundContainers) {
         NSString *cached = ZXFoundContainers[gameId];
         if (cached.length > 0) return cached;
@@ -2419,6 +2431,25 @@ static NSString *ZXFindContainerForMode(NSString *gameId, NSString *mode, NSStri
                 NSString *targetDir = [svc targetPathForSubPath:relPath gameMode:svc.selectedGameMode];
                 if (targetDir.length > 0) {
                     inject(targetDir);
+                } else if (ZXScanInProgress) {
+                    ZXPhotoCell*c2=(ZXPhotoCell*)[svc->_tv cellForRowAtIndexPath:cIP];
+                    [c2 setStatus:@"Scanning game..." color:UIColor.systemYellowColor];
+                    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+                        for (int i = 0; i < 20 && ZXScanInProgress; i++) {
+                            [NSThread sleepForTimeInterval:0.5];
+                            if ([svc targetPathForSubPath:relPath gameMode:svc.selectedGameMode].length > 0) break;
+                        }
+                        dispatch_async(dispatch_get_main_queue(), ^{
+                            NSString *td = [svc targetPathForSubPath:relPath gameMode:svc.selectedGameMode];
+                            if (td.length > 0) {
+                                inject(td);
+                            } else {
+                                ZXPhotoCell*c3=(ZXPhotoCell*)[svc->_tv cellForRowAtIndexPath:cIP];c3.sw.on=NO;
+                                NSString *errMsg = svc.lastTargetError.length ? svc.lastTargetError : @"Target grant failed";
+                                [c3 setStatus:errMsg color:UIColor.systemRedColor];
+                            }
+                        });
+                    });
                 } else {
                     ZXPhotoCell*c2=(ZXPhotoCell*)[svc->_tv cellForRowAtIndexPath:cIP];c2.sw.on=NO;
                     NSString *errMsg = svc.lastTargetError.length ? svc.lastTargetError : @"Target grant failed";
@@ -2532,6 +2563,25 @@ static NSString *ZXFindContainerForMode(NSString *gameId, NSString *mode, NSStri
             NSString *targetDir = [svc targetPathForSubPath:relPath gameMode:svc.selectedGameMode];
             if (targetDir.length > 0) {
                 inject(targetDir);
+            } else if (ZXScanInProgress) {
+                ZXSlotCell*c2=(ZXSlotCell*)[svc->_tv cellForRowAtIndexPath:cIP];
+                [c2 setStatus:@"Scanning game..." color:UIColor.systemYellowColor];
+                dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+                    for (int i = 0; i < 20 && ZXScanInProgress; i++) {
+                        [NSThread sleepForTimeInterval:0.5];
+                        if ([svc targetPathForSubPath:relPath gameMode:svc.selectedGameMode].length > 0) break;
+                    }
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        NSString *td = [svc targetPathForSubPath:relPath gameMode:svc.selectedGameMode];
+                        if (td.length > 0) {
+                            inject(td);
+                        } else {
+                            ZXSlotCell*c3=(ZXSlotCell*)[svc->_tv cellForRowAtIndexPath:cIP];c3.sw.on=NO;
+                            NSString *errMsg = svc.lastTargetError.length ? svc.lastTargetError : @"Target grant failed";
+                            [c3 setStatus:errMsg color:UIColor.systemRedColor];
+                        }
+                    });
+                });
             } else {
                 ZXSlotCell*c2=(ZXSlotCell*)[svc->_tv cellForRowAtIndexPath:cIP];c2.sw.on=NO;
                 NSString *errMsg = svc.lastTargetError.length ? svc.lastTargetError : @"Target grant failed";
