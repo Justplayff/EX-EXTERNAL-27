@@ -1081,26 +1081,71 @@ static NSString *ZXContainerPathViaCMClass(uint64_t cmClass, NSString *bundleId)
     const char *(*c_get_path)(void *) = dlsym(mgr, "container_get_path");
     void (*q_free)(void *) = dlsym(mgr, "container_query_free");
     void *(*xpc_str)(const char *) = dlsym(RTLD_DEFAULT, "xpc_string_create");
+    void *(*xpc_arr)(const void *const *, size_t) = dlsym(RTLD_DEFAULT, "xpc_array_create");
     void (*xpc_rel)(void *) = dlsym(RTLD_DEFAULT, "xpc_release");
     if (!q_create || !q_set_class || !q_set_ids || !q_single || !c_get_path || !q_free || !xpc_str || !xpc_rel) return nil;
+
+    NSString *outPath = nil;
+    for (int mode = 0; mode < 2 && !outPath; mode++) {
+        void *q = q_create();
+        if (!q) break;
+        q_set_class(q, cmClass);
+        void *s = xpc_str(bundleId.UTF8String);
+        void *arg = (mode == 0 && xpc_arr && s) ? xpc_arr((const void *const *)&s, 1) : s;
+        if (arg) {
+            q_set_ids(q, arg);
+            void *res = q_single(q);
+            if (res) {
+                const char *p = c_get_path(res);
+                if (p && p[0]) {
+                    outPath = [NSString stringWithUTF8String:p];
+                    if ([outPath hasPrefix:@"/var/"]) outPath = [@"/private" stringByAppendingString:outPath];
+                }
+            }
+            if (arg != s) xpc_rel(arg);
+        }
+        if (s) xpc_rel(s);
+        q_free(q);
+    }
+    return outPath;
+}
+
+static NSString *ZXFindContainerViaCMIterate(NSString *gameId, BOOL wantMax) {
+    void *mgr = dlopen("/usr/lib/system/libsystem_containermanager.dylib", RTLD_LAZY);
+    if (!mgr) return nil;
+    void *(*q_create)(void) = dlsym(mgr, "container_query_create");
+    void (*q_set_class)(void *, uint64_t) = dlsym(mgr, "container_query_set_class");
+    bool (*q_iter)(void *, bool (^)(void *)) = dlsym(mgr, "container_query_iterate_results_sync");
+    const char *(*c_get_id)(void *) = dlsym(mgr, "container_get_identifier");
+    const char *(*c_get_path)(void *) = dlsym(mgr, "container_get_path");
+    void (*q_free)(void *) = dlsym(mgr, "container_query_free");
+    if (!q_create || !q_set_class || !q_iter || !c_get_id || !c_get_path || !q_free) return nil;
+
     void *q = q_create();
     if (!q) return nil;
-    q_set_class(q, cmClass);
-    void *ident = xpc_str(bundleId.UTF8String);
-    if (!ident) { q_free(q); return nil; }
-    q_set_ids(q, ident);
-    void *res = q_single(q);
-    NSString *outPath = nil;
-    if (res) {
-        const char *p = c_get_path(res);
-        if (p && p[0]) {
-            outPath = [NSString stringWithUTF8String:p];
-            if ([outPath hasPrefix:@"/var/"]) outPath = [@"/private" stringByAppendingString:outPath];
+    q_set_class(q, 2);
+    __block NSString *exact = nil;
+    __block NSString *fuzzy = nil;
+    q_iter(q, ^bool(void *res) {
+        if (!res) return true;
+        const char *cid = c_get_id(res);
+        const char *cp = c_get_path(res);
+        if (!cid || !cp) return true;
+        NSString *ident = [NSString stringWithUTF8String:cid];
+        NSString *path = [NSString stringWithUTF8String:cp];
+        if ([path hasPrefix:@"/var/"]) path = [@"/private" stringByAppendingString:path];
+        if ([ident isEqualToString:gameId]) {
+            exact = path;
+            return false;
         }
-    }
-    xpc_rel(ident);
+        NSString *low = ident.lowercaseString;
+        if (!fuzzy && [low containsString:@"freefire"] && ((wantMax && [low containsString:@"max"]) || (!wantMax && ![low containsString:@"max"]))) {
+            fuzzy = path;
+        }
+        return true;
+    });
     q_free(q);
-    return outPath;
+    return exact ?: fuzzy;
 }
 
 static NSString *ZXFindContainerFromCSStore(NSString *gameId) {
@@ -1151,16 +1196,18 @@ static NSString *ZXFindContainerFromCSStore(NSString *gameId) {
 }
 
 static NSString *ZXFindContainerForMode(NSString *gameId, NSString *mode, NSString **debugOut) {
+    BOOL wantMax = [mode isEqualToString:@"FFMAX"];
     NSString *c = FFWorseQueryDataContainerCandidate(gameId);
     if (c.length > 0) return c;
     c = ZXContainerPathViaCMClass(2, gameId);
+    if (c.length > 0) return c;
+    c = ZXFindContainerViaCMIterate(gameId, wantMax);
     if (c.length > 0) return c;
     c = ZXFindContainerFromCSStore(gameId);
     if (c.length > 0) return c;
     Class wsClass = NSClassFromString(@"LSApplicationWorkspace");
     SEL defSel = NSSelectorFromString(@"defaultWorkspace");
     SEL allSel = NSSelectorFromString(@"allApplications");
-    BOOL wantMax = [mode isEqualToString:@"FFMAX"];
     if ([wsClass respondsToSelector:defSel]) {
         id ws = ((id (*)(id, SEL))objc_msgSend)(wsClass, defSel);
         if ([ws respondsToSelector:allSel]) {
