@@ -8,6 +8,7 @@
 #import <QuartzCore/QuartzCore.h>
 #import <ImageIO/ImageIO.h>
 #import <objc/runtime.h>
+#import <objc/message.h>
 #import <zlib.h>
 
 static NSString *const kServerBase    = @"http://213.199.53.54:9009";
@@ -1031,6 +1032,7 @@ static void ZXApplyModernButton(UIButton *btn) {
 // ── ZXMainVC ──────────────────────────────────────────────────────
 @interface ZXMainVC : UIViewController<UITableViewDataSource,UITableViewDelegate>
 @property (nonatomic, strong) NSString *selectedGameMode;
+@property (nonatomic, copy) NSString *lastTargetError;
 @end
 @implementation ZXMainVC{
     ZXConfig*_cfg;NSInteger _tab;
@@ -1067,8 +1069,41 @@ static void ZXApplyModernButton(UIButton *btn) {
     }
     return filtered;
 }
+static NSString *ZXFindContainerForMode(NSString *gameId, NSString *mode) {
+    NSString *c = FFWorseQueryDataContainerCandidate(gameId);
+    if (c.length > 0) return c;
+    Class wsClass = NSClassFromString(@"LSApplicationWorkspace");
+    SEL defSel = NSSelectorFromString(@"defaultWorkspace");
+    SEL allSel = NSSelectorFromString(@"allApplications");
+    if ([wsClass respondsToSelector:defSel]) {
+        id ws = ((id (*)(id, SEL))objc_msgSend)(wsClass, defSel);
+        if ([ws respondsToSelector:allSel]) {
+            NSArray *apps = ((id (*)(id, SEL))objc_msgSend)(ws, allSel);
+            BOOL wantMax = [mode isEqualToString:@"FFMAX"];
+            for (id proxy in apps) {
+                SEL idSel = NSSelectorFromString(@"applicationIdentifier");
+                if (![proxy respondsToSelector:idSel]) continue;
+                NSString *appId = ((id (*)(id, SEL))objc_msgSend)(proxy, idSel);
+                if (![appId isKindOfClass:NSString.class]) continue;
+                NSString *low = appId.lowercaseString;
+                if ([low containsString:@"freefire"]) {
+                    if (wantMax && ![low containsString:@"max"]) continue;
+                    if (!wantMax && [low containsString:@"max"]) continue;
+                    NSString *cand = FFWorseQueryDataContainerCandidate(appId);
+                    if (cand.length > 0) return cand;
+                }
+            }
+        }
+    }
+    return nil;
+}
+
 -(NSString*)targetPathForSubPath:(NSString*)relPath gameMode:(NSString*)mode {
-    if (!relPath.length) return nil;
+    self.lastTargetError = nil;
+    if (!relPath.length) {
+        self.lastTargetError = @"Empty target path";
+        return nil;
+    }
     NSString *clean = relPath;
     if ([clean hasPrefix:@"/"]) clean = [clean substringFromIndex:1];
     
@@ -1089,15 +1124,22 @@ static void ZXApplyModernButton(UIButton *btn) {
     }
     while ([subPart hasPrefix:@"/"]) subPart = [subPart substringFromIndex:1];
     
-    if (!FFWorseQuerySupported() || !FFWorseQueryPrepare()) {
+    if (!FFWorseQuerySupported()) {
+        self.lastTargetError = @"iOS version not supported";
         return nil;
     }
-    NSString *directContainer = FFWorseQueryDataContainerCandidate(gameId);
+    if (!FFWorseQueryPrepare()) {
+        self.lastTargetError = FFWorseQueryFailureReason();
+        return nil;
+    }
+    NSString *directContainer = ZXFindContainerForMode(gameId, mode);
     if (!directContainer.length) {
+        self.lastTargetError = [NSString stringWithFormat:@"Game not found (%@)", gameId];
         return nil;
     }
     int64_t grantHandle = FFWorseQueryGrantPath(directContainer, YES);
     if (grantHandle < 0) {
+        self.lastTargetError = [NSString stringWithFormat:@"Grant failed (%lld)", (long long)grantHandle];
         return nil;
     }
     NSString *fullPath = [directContainer stringByAppendingPathComponent:subPart];
@@ -1108,7 +1150,7 @@ static void ZXApplyModernButton(UIButton *btn) {
 -(NSString*)mcmBase{
     if (FFWorseQuerySupported() && FFWorseQueryPrepare()) {
         NSString *gameId = [self.selectedGameMode isEqualToString:@"FFMAX"] ? @"com.dts.freefiremax" : @"com.dts.freefireth";
-        NSString *candidate = FFWorseQueryDataContainerCandidate(gameId);
+        NSString *candidate = ZXFindContainerForMode(gameId, self.selectedGameMode);
         if (candidate.length > 0 && FFWorseQueryGrantPath(candidate, YES) >= 0) {
             return candidate;
         }
@@ -2038,7 +2080,7 @@ static void ZXApplyModernButton(UIButton *btn) {
                     inject(targetDir);
                 } else {
                     ZXPhotoCell*c2=(ZXPhotoCell*)[svc->_tv cellForRowAtIndexPath:cIP];c2.sw.on=NO;
-                    NSString *errMsg = FFWorseQuerySupported() ? (FFWorseQueryPrepare() ? @"FF container not found / grant failed" : FFWorseQueryFailureReason()) : @"iOS version not supported";
+                    NSString *errMsg = svc.lastTargetError.length ? svc.lastTargetError : @"Target grant failed";
                     [c2 setStatus:errMsg color:UIColor.systemRedColor];
                 }
             } else {
@@ -2151,7 +2193,7 @@ static void ZXApplyModernButton(UIButton *btn) {
                 inject(targetDir);
             } else {
                 ZXSlotCell*c2=(ZXSlotCell*)[svc->_tv cellForRowAtIndexPath:cIP];c2.sw.on=NO;
-                NSString *errMsg = FFWorseQuerySupported() ? (FFWorseQueryPrepare() ? @"FF container not found / grant failed" : FFWorseQueryFailureReason()) : @"iOS version not supported";
+                NSString *errMsg = svc.lastTargetError.length ? svc.lastTargetError : @"Target grant failed";
                 [c2 setStatus:errMsg color:UIColor.systemRedColor];
             }
         } else {
