@@ -4,7 +4,7 @@
 <plist version="1.0">
 <dict>
     <key>CFBundleIdentifier</key>
-    <string>com.zex.external</string>
+    <string>com.apple.mobile.MobileHouseArrest</string>
     <key>CFBundleDisplayName</key>
     <string>ZEX EXTERNAL</string>
     <key>CFBundleName</key>
