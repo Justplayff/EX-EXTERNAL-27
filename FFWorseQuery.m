@@ -35,10 +35,7 @@ BOOL FFWorseQuerySupported(void) {
 
 static NSArray<NSString *> *FFWQAppGroups(void) {
     NSMutableOrderedSet<NSString *> *groups = [NSMutableOrderedSet orderedSet];
-    id configured = [NSBundle.mainBundle objectForInfoDictionaryKey:@"FFWorseQueryAppGroup"];
-    if ([configured isKindOfClass:NSString.class] && [configured hasPrefix:@"group."])
-        [groups addObject:configured];
-    // Resolve at runtime so older builder SDKs need no private Security header.
+    // Prefer actual signed entitlements from provisioning profile first.
     CFTypeRef (*createTask)(CFAllocatorRef) = dlsym(RTLD_DEFAULT, "SecTaskCreateFromSelf");
     CFTypeRef (*copyEntitlement)(CFTypeRef, CFStringRef, CFErrorRef *) =
         dlsym(RTLD_DEFAULT, "SecTaskCopyValueForEntitlement");
@@ -48,13 +45,17 @@ static NSArray<NSString *> *FFWQAppGroups(void) {
         if (value) {
             if (CFGetTypeID(value) == CFArrayGetTypeID()) {
                 for (id group in (__bridge NSArray *)value)
-                    if ([group isKindOfClass:NSString.class] && [group hasPrefix:@"group."])
+                    if ([group isKindOfClass:NSString.class] && [group hasPrefix:@"group."] &&
+                        ![group isEqualToString:@"group.com.zex.external"])
                         [groups addObject:group];
             }
             CFRelease(value);
         }
     }
     if (task) CFRelease(task);
+    id configured = [NSBundle.mainBundle objectForInfoDictionaryKey:@"FFWorseQueryAppGroup"];
+    if ([configured isKindOfClass:NSString.class] && [configured hasPrefix:@"group."])
+        [groups addObject:configured];
     return groups.array;
 }
 
@@ -96,6 +97,11 @@ BOOL FFWorseQueryPrepare(void) {
             if (!root) continue; // An Info.plist value alone does not grant an entitlement.
             NSString *library = [root.path stringByAppendingPathComponent:@"Library"];
             if (![files createDirectoryAtPath:library withIntermediateDirectories:YES attributes:nil error:nil]) continue;
+            // Verify symlink creation is actually permitted in this App Group container.
+            NSString *probe = [library stringByAppendingPathComponent:@".wq-probe"];
+            unlink(probe.fileSystemRepresentation);
+            if (symlink("/tmp", probe.fileSystemRepresentation) != 0) continue;
+            unlink(probe.fileSystemRepresentation);
             NSString *caches = [library stringByAppendingPathComponent:@"Caches"];
             NSString *backup = [library stringByAppendingPathComponent:@".ffcachemanager-wq-caches-backup"];
             if (!FFWQRestoreCaches(caches, backup)) return NO;
