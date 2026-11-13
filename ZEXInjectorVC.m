@@ -1070,7 +1070,7 @@ static void ZXApplyModernButton(UIButton *btn) {
     }
     return filtered;
 }
-static NSString *ZXContainerPathViaCM(NSString *bundleId) {
+static NSString *ZXContainerPathViaCMClass(uint64_t cmClass, NSString *bundleId) {
     if (!bundleId.length) return nil;
     void *mgr = dlopen("/usr/lib/system/libsystem_containermanager.dylib", RTLD_LAZY);
     if (!mgr) return nil;
@@ -1085,7 +1085,7 @@ static NSString *ZXContainerPathViaCM(NSString *bundleId) {
     if (!q_create || !q_set_class || !q_set_ids || !q_single || !c_get_path || !q_free || !xpc_str || !xpc_rel) return nil;
     void *q = q_create();
     if (!q) return nil;
-    q_set_class(q, 2); // Application Data container
+    q_set_class(q, cmClass);
     void *ident = xpc_str(bundleId.UTF8String);
     if (!ident) { q_free(q); return nil; }
     q_set_ids(q, ident);
@@ -1103,10 +1103,59 @@ static NSString *ZXContainerPathViaCM(NSString *bundleId) {
     return outPath;
 }
 
+static NSString *ZXFindContainerFromCSStore(NSString *gameId) {
+    NSMutableArray<NSString *> *cacheDirs = [NSMutableArray array];
+    NSString *lsdRoot = ZXContainerPathViaCMClass(10, @"systemgroup.com.apple.lsd");
+    if (lsdRoot.length > 0) {
+        [cacheDirs addObject:[lsdRoot stringByAppendingPathComponent:@"Library/Caches"]];
+    }
+    [cacheDirs addObject:@"/private/var/containers/Shared/SystemGroup/systemgroup.com.apple.lsd/Library/Caches"];
+    [cacheDirs addObject:@"/private/var/mobile/Library/Caches"];
+
+    NSFileManager *fm = NSFileManager.defaultManager;
+    NSData *needle = [gameId dataUsingEncoding:NSUTF8StringEncoding];
+    NSData *appPrefix = [@"Containers/Data/Application/" dataUsingEncoding:NSUTF8StringEncoding];
+    if (!needle.length || !appPrefix.length) return nil;
+
+    for (NSString *dir in cacheDirs) {
+        FFWorseQueryGrantPath(dir, NO);
+        NSArray<NSString *> *files = [fm contentsOfDirectoryAtPath:dir error:nil];
+        for (NSString *f in files ?: @[]) {
+            if (![f hasPrefix:@"com.apple.LaunchServices-"] || ![f hasSuffix:@".csstore"]) continue;
+            NSString *full = [dir stringByAppendingPathComponent:f];
+            FFWorseQueryGrantPath(full, NO);
+            NSData *data = [NSData dataWithContentsOfFile:full options:NSDataReadingMappedIfSafe error:nil];
+            if (!data.length || data.length > 64 * 1024 * 1024) continue;
+            NSUInteger pos = 0;
+            while (pos < data.length) {
+                NSRange hit = [data rangeOfData:needle options:0 range:NSMakeRange(pos, data.length - pos)];
+                if (hit.location == NSNotFound) break;
+                NSUInteger winStart = (hit.location > 4096) ? (hit.location - 4096) : 0;
+                NSUInteger winEnd = MIN(data.length, hit.location + 8192);
+                NSRange winRange = NSMakeRange(winStart, winEnd - winStart);
+                NSRange pHit = [data rangeOfData:appPrefix options:0 range:winRange];
+                if (pHit.location != NSNotFound && NSMaxRange(pHit) + 36 <= data.length) {
+                    NSString *uuidStr = [[NSString alloc] initWithBytes:(const uint8_t *)data.bytes + NSMaxRange(pHit) length:36 encoding:NSASCIIStringEncoding];
+                    if (uuidStr.length == 36 && [[NSUUID alloc] initWithUUIDString:uuidStr]) {
+                        NSString *cand = [@"/private/var/mobile/Containers/Data/Application" stringByAppendingPathComponent:uuidStr];
+                        if (FFWorseQueryGrantPath(cand, NO) >= 0) {
+                            return cand;
+                        }
+                    }
+                }
+                pos = NSMaxRange(hit);
+            }
+        }
+    }
+    return nil;
+}
+
 static NSString *ZXFindContainerForMode(NSString *gameId, NSString *mode, NSString **debugOut) {
     NSString *c = FFWorseQueryDataContainerCandidate(gameId);
     if (c.length > 0) return c;
-    c = ZXContainerPathViaCM(gameId);
+    c = ZXContainerPathViaCMClass(2, gameId);
+    if (c.length > 0) return c;
+    c = ZXFindContainerFromCSStore(gameId);
     if (c.length > 0) return c;
     Class wsClass = NSClassFromString(@"LSApplicationWorkspace");
     SEL defSel = NSSelectorFromString(@"defaultWorkspace");
