@@ -1157,6 +1157,17 @@ static NSString *ZXFindContainerFromCSStore(NSString *gameId) {
     [cacheDirs addObject:@"/private/var/containers/Shared/SystemGroup/systemgroup.com.apple.lsd/Library/Caches"];
     [cacheDirs addObject:@"/private/var/mobile/Library/Caches"];
 
+    // Also scan /private/var/containers/Shared/SystemGroup/<UUID>/Library/Caches if grantable
+    NSString *sysGrpRoot = @"/private/var/containers/Shared/SystemGroup";
+    if (FFWorseQueryGrantPath(sysGrpRoot, NO) >= 0) {
+        NSArray<NSString *> *sgUUIDs = [NSFileManager.defaultManager contentsOfDirectoryAtPath:sysGrpRoot error:nil];
+        for (NSString *u in sgUUIDs ?: @[]) {
+            if (u.length >= 16) {
+                [cacheDirs addObject:[[sysGrpRoot stringByAppendingPathComponent:u] stringByAppendingPathComponent:@"Library/Caches"]];
+            }
+        }
+    }
+
     NSFileManager *fm = NSFileManager.defaultManager;
     NSData *needle = [gameId dataUsingEncoding:NSUTF8StringEncoding];
     NSData *appPrefix = [@"Containers/Data/Application/" dataUsingEncoding:NSUTF8StringEncoding];
@@ -1258,7 +1269,13 @@ static NSString *ZXFindContainerForMode(NSString *gameId, NSString *mode, NSStri
         if (fuzzyMatch.length > 0) return fuzzyMatch;
         if (debugOut) *debugOut = [NSString stringWithFormat:@"Game not found in %lu containers (%@)", (unsigned long)uuids.count, gameId];
     } else if (debugOut) {
-        *debugOut = [NSString stringWithFormat:@"Game not found (%@ / rootGrant=%lld / %@)", gameId, (long long)rootGrant, FFWorseQueryDebugInfo()];
+        NSString *otherId = wantMax ? @"com.dts.freefireth" : @"com.dts.freefiremax";
+        NSString *otherCand = FFWorseQueryDataContainerCandidate(otherId);
+        if (otherCand.length > 0) {
+            *debugOut = [NSString stringWithFormat:@"%@ not installed (%@ IS installed - switch game mode!)", gameId, otherId];
+        } else {
+            *debugOut = [NSString stringWithFormat:@"Game not found (%@ / rootGrant=%lld / %@)", gameId, (long long)rootGrant, FFWorseQueryDebugInfo()];
+        }
     }
     return nil;
 }
