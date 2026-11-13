@@ -10,6 +10,7 @@ int64_t FFWorseQueryGrantPath(NSString *path, BOOL allowMissing);
 BOOL FFWorseQueryHasSandboxAccess(void);
 NSString *FFWorseQueryStatusText(void);
 NSString *FFWorseQueryFailureReason(void);
+NSString *FFWorseQueryDebugInfo(void);
 // LaunchServices candidate only; callers must verify the container's identity.
 NSString * _Nullable FFWorseQueryDataContainerCandidate(NSString *identifier);
 

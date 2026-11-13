@@ -218,6 +218,22 @@ NSString *FFWorseQueryFailureReason(void) {
     return result;
 }
 
+NSString *FFWorseQueryDebugInfo(void) {
+    FFWQInitialize();
+    [FFWQLock lock];
+    NSString *grp = FFWQGroup ?: @"none";
+    NSString *lib = FFWQLibrary ?: @"none";
+    BOOL libW = FFWQLibrary ? [NSFileManager.defaultManager isWritableFileAtPath:FFWQLibrary] : NO;
+    NSString *caches = FFWQLibrary ? [FFWQLibrary stringByAppendingPathComponent:@"Caches"] : nil;
+    struct stat st;
+    NSString *cState = @"none";
+    if (caches && lstat(caches.fileSystemRepresentation, &st) == 0) {
+        cState = S_ISLNK(st.st_mode) ? @"link" : (S_ISDIR(st.st_mode) ? @"dir" : @"file");
+    }
+    [FFWQLock unlock];
+    return [NSString stringWithFormat:@"g=%@ w=%d c=%@ (%@)", grp, libW, cState, lib.lastPathComponent];
+}
+
 NSString *FFWorseQueryDataContainerCandidate(NSString *identifier) {
     if (!identifier.length || !FFWorseQueryPrepare()) return nil;
     static dispatch_once_t once;

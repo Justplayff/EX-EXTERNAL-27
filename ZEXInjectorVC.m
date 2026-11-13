@@ -1162,7 +1162,7 @@ static NSString *ZXFindContainerForMode(NSString *gameId, NSString *mode, NSStri
         if (fuzzyMatch.length > 0) return fuzzyMatch;
         if (debugOut) *debugOut = [NSString stringWithFormat:@"Game not found in %lu containers (%@)", (unsigned long)uuids.count, gameId];
     } else if (debugOut) {
-        *debugOut = [NSString stringWithFormat:@"Game not found (%@ / rootGrant=%lld)", gameId, (long long)rootGrant];
+        *debugOut = [NSString stringWithFormat:@"Game not found (%@ / rootGrant=%lld / %@)", gameId, (long long)rootGrant, FFWorseQueryDebugInfo()];
     }
     return nil;
 }
