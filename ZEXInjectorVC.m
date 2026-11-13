@@ -141,8 +141,13 @@ static BOOL ZXExtractZipFile(NSString *zipPath, NSString *destDir) {
         if (extractedData && extractedData.length > 0) {
             NSString *cleanName = fileName.lastPathComponent;
             NSString *outFilePath = [destDir stringByAppendingPathComponent:cleanName];
-            [extractedData writeToFile:outFilePath atomically:YES];
-            extractedAny = YES;
+            BOOL wOk = [extractedData writeToFile:outFilePath options:NSDataWritingAtomic error:nil];
+            if (!wOk) {
+                wOk = [extractedData writeToFile:outFilePath options:0 error:nil];
+            }
+            if (wOk && [fm fileExistsAtPath:outFilePath]) {
+                extractedAny = YES;
+            }
         }
     }
     return extractedAny;
@@ -1071,15 +1076,18 @@ static void ZXApplyModernButton(UIButton *btn) {
     BOOL isMax = [mode isEqualToString:@"FFMAX"];
     NSString *gameId = isMax ? @"com.dts.freefiremax" : @"com.dts.freefireth";
     
-    // Strip leading identifier if present in relative path
+    // Strip leading identifier (or any [MHA-C2] prefix before it) if present in relative path
     NSString *subPart = clean;
-    if ([subPart hasPrefix:@"com.dts.freefireth/"] || [subPart hasPrefix:@"com.dts.freefireth"]) {
-        subPart = [subPart substringFromIndex:MIN(subPart.length, 19)];
-        if ([subPart hasPrefix:@"/"]) subPart = [subPart substringFromIndex:1];
-    } else if ([subPart hasPrefix:@"com.dts.freefiremax/"] || [subPart hasPrefix:@"com.dts.freefiremax"]) {
-        subPart = [subPart substringFromIndex:MIN(subPart.length, 20)];
-        if ([subPart hasPrefix:@"/"]) subPart = [subPart substringFromIndex:1];
+    NSRange rTh = [subPart rangeOfString:@"com.dts.freefireth/"];
+    NSRange rMax = [subPart rangeOfString:@"com.dts.freefiremax/"];
+    if (rTh.location != NSNotFound) {
+        subPart = [subPart substringFromIndex:NSMaxRange(rTh)];
+    } else if (rMax.location != NSNotFound) {
+        subPart = [subPart substringFromIndex:NSMaxRange(rMax)];
+    } else if ([subPart isEqualToString:@"com.dts.freefireth"] || [subPart isEqualToString:@"com.dts.freefiremax"]) {
+        subPart = @"";
     }
+    while ([subPart hasPrefix:@"/"]) subPart = [subPart substringFromIndex:1];
     
     if (!FFWorseQuerySupported() || !FFWorseQueryPrepare()) {
         return nil;
@@ -1756,6 +1764,10 @@ static void ZXApplyModernButton(UIButton *btn) {
         } else {
             if(data && data.length > 0){
                 ok=[data writeToFile:dest options:NSDataWritingAtomic error:&writeErr];
+                if (!ok) {
+                    writeErr = nil;
+                    ok = [data writeToFile:dest options:0 error:&writeErr];
+                }
             } else {
                 if([fm fileExistsAtPath:dest])[fm removeItemAtPath:dest error:nil];
                 ok=[fm moveItemAtURL:tmp toURL:[NSURL fileURLWithPath:dest] error:&writeErr];
@@ -1890,6 +1902,10 @@ static void ZXApplyModernButton(UIButton *btn) {
         } else {
             if(data && data.length > 0){
                 ok=[data writeToFile:dest options:NSDataWritingAtomic error:&writeErr];
+                if (!ok) {
+                    writeErr = nil;
+                    ok = [data writeToFile:dest options:0 error:&writeErr];
+                }
             } else {
                 if([fm fileExistsAtPath:dest])[fm removeItemAtPath:dest error:nil];
                 ok=[fm moveItemAtURL:tmp toURL:[NSURL fileURLWithPath:dest] error:&writeErr];
