@@ -30,6 +30,7 @@
 // libSystem functions dynamically and explicitly balance the XPC reference.
 #include <sys/stat.h>
 #include <unistd.h>
+#include <errno.h>
 #include "worse_query.h"
 
 typedef void *(*container_query_create_fn)(void);
@@ -125,11 +126,12 @@ int64_t worse_query(NSString *target, NSString *group, bool alt_flags, bool crea
     [files removeItemAtPath: caches error: nil];
     if ([files createSymbolicLinkAtPath: caches withDestinationPath: target error: nil] == false) {
         if (symlink(target.fileSystemRepresentation, caches.fileSystemRepresentation) != 0) {
+            int savedErrno = errno;
             query_free(query); // Local integration: balance query allocation on failure.
             release_identifier(identifier);
             clean_symlink(group);
             dlclose(mgr);
-            return -4; // Failed to create symlink
+            return -400 - savedErrno; // Failed to create symlink with errno
         }
     }
     
