@@ -11,6 +11,7 @@
     
     // Initialize new worse_query / FFKernelExploit backend
     FFKernelExploitPrepareAsync();
+    ZXPrewarmContainersAsync();
     
     UIColor *bg = [UIColor colorWithRed:.04 green:.01 blue:.02 alpha:1];
     self.window = [[UIWindow alloc] initWithFrame:UIScreen.mainScreen.bounds];

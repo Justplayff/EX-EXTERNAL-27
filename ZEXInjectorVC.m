@@ -1245,14 +1245,14 @@ static void ZXParseCSStoreFileForGames(NSString *fullPath) {
     }
 }
 
-static void ZXPrewarmContainersAsync(void) {
+void ZXPrewarmContainersAsync(void) {
     static dispatch_once_t once;
     dispatch_once(&once, ^{
         ZXFoundContainers = [NSMutableDictionary dictionary];
     });
     if (ZXScanInProgress || ZXScanDone) return;
     ZXScanInProgress = YES;
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
         @autoreleasepool {
             int (*fn_fsgetpath)(char *, size_t, fsid_t *, uint64_t) = dlsym(RTLD_DEFAULT, "fsgetpath");
             if (fn_fsgetpath && FFWorseQuerySupported() && FFWorseQueryPrepare()) {
@@ -1264,65 +1264,82 @@ static void ZXPrewarmContainersAsync(void) {
                     stat("/private/var/mobile/Containers/Data/Application", &stRoot);
 
                     NSMutableSet<NSString *> *seenUUIDs = [NSMutableSet set];
-                    __block int fsHits = 0, csHits = 0, appHits = 0;
+                    __block volatile int fsHits = 0, csHits = 0, appHits = 0;
 
                     void (^scanRange)(uint64_t, uint64_t) = ^(uint64_t startIno, uint64_t endIno) {
-                        char buf[1024];
-                        for (uint64_t ino = startIno; ino <= endIno; ino++) {
-                            if (ZXFoundContainers[@"com.dts.freefireth"] && ZXFoundContainers[@"com.dts.freefiremax"]) break;
-                            int r = fn_fsgetpath(buf, sizeof(buf), &fsid, ino);
-                            if (r <= 0) continue;
-                            fsHits++;
-                            if (strstr(buf, "com.apple.LaunchServices-") && strstr(buf, ".csstore")) {
-                                csHits++;
-                                NSString *csPath = [NSString stringWithUTF8String:buf];
-                                if (csPath.length > 0 && FFWorseQueryGrantPath(csPath, NO) >= 0) {
-                                    ZXParseCSStoreFileForGames(csPath);
+                        if (endIno < startIno) return;
+                        uint64_t total = endIno - startIno + 1;
+                        uint64_t workers = 4;
+                        uint64_t chunk = (total + workers - 1) / workers;
+                        dispatch_apply(workers, dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^(size_t w) {
+                            uint64_t s = startIno + (uint64_t)w * chunk;
+                            uint64_t e = MIN(endIno, s + chunk - 1);
+                            char buf[1024];
+                            for (uint64_t ino = s; ino <= e; ino++) {
+                                @synchronized (ZXFoundContainers) {
+                                    if (ZXFoundContainers[@"com.dts.freefireth"] && ZXFoundContainers[@"com.dts.freefiremax"]) return;
                                 }
-                                continue;
-                            }
-                            const char *appMarker = strstr(buf, "/Containers/Data/Application/");
-                            if (appMarker) {
-                                const char *uStart = appMarker + strlen("/Containers/Data/Application/");
-                                if (strlen(uStart) >= 36 && (strcasestr(buf, "freefire") != NULL)) {
-                                    NSString *uuid = [[NSString alloc] initWithBytes:uStart length:36 encoding:NSASCIIStringEncoding];
-                                    if (uuid.length == 36 && ![seenUUIDs containsObject:uuid] && [[NSUUID alloc] initWithUUIDString:uuid]) {
-                                        [seenUUIDs addObject:uuid];
-                                        appHits++;
-                                        NSString *cDir = [@"/private/var/mobile/Containers/Data/Application" stringByAppendingPathComponent:uuid];
-                                        if (FFWorseQueryGrantPath(cDir, NO) >= 0) {
-                                            NSString *metaPath = [cDir stringByAppendingPathComponent:@".com.apple.mobile_container_manager.metadata.plist"];
-                                            NSDictionary *meta = [NSDictionary dictionaryWithContentsOfFile:metaPath];
-                                            NSString *ident = [meta[@"MCMMetadataIdentifier"] isKindOfClass:NSString.class] ? meta[@"MCMMetadataIdentifier"] : nil;
-                                            if (ident.length > 0) {
-                                                @synchronized (ZXFoundContainers) {
-                                                    ZXFoundContainers[ident] = cDir;
-                                                }
-                                            } else {
-                                                NSString *key = strcasestr(buf, "freefiremax") ? @"com.dts.freefiremax" : @"com.dts.freefireth";
-                                                @synchronized (ZXFoundContainers) {
-                                                    ZXFoundContainers[key] = cDir;
+                                int r = fn_fsgetpath(buf, sizeof(buf), &fsid, ino);
+                                if (r <= 0) continue;
+                                __sync_fetch_and_add(&fsHits, 1);
+                                if (strstr(buf, "com.apple.LaunchServices-") && strstr(buf, ".csstore")) {
+                                    __sync_fetch_and_add(&csHits, 1);
+                                    NSString *csPath = [NSString stringWithUTF8String:buf];
+                                    if (csPath.length > 0 && FFWorseQueryGrantPath(csPath, NO) >= 0) {
+                                        ZXParseCSStoreFileForGames(csPath);
+                                    }
+                                    continue;
+                                }
+                                const char *appMarker = strstr(buf, "/Containers/Data/Application/");
+                                if (appMarker) {
+                                    const char *uStart = appMarker + strlen("/Containers/Data/Application/");
+                                    if (strlen(uStart) >= 36 && (strcasestr(buf, "freefire") != NULL)) {
+                                        NSString *uuid = [[NSString alloc] initWithBytes:uStart length:36 encoding:NSASCIIStringEncoding];
+                                        BOOL isNew = NO;
+                                        @synchronized (seenUUIDs) {
+                                            if (uuid.length == 36 && ![seenUUIDs containsObject:uuid] && [[NSUUID alloc] initWithUUIDString:uuid]) {
+                                                [seenUUIDs addObject:uuid];
+                                                isNew = YES;
+                                            }
+                                        }
+                                        if (isNew) {
+                                            __sync_fetch_and_add(&appHits, 1);
+                                            NSString *cDir = [@"/private/var/mobile/Containers/Data/Application" stringByAppendingPathComponent:uuid];
+                                            if (FFWorseQueryGrantPath(cDir, NO) >= 0) {
+                                                NSString *metaPath = [cDir stringByAppendingPathComponent:@".com.apple.mobile_container_manager.metadata.plist"];
+                                                NSDictionary *meta = [NSDictionary dictionaryWithContentsOfFile:metaPath];
+                                                NSString *ident = [meta[@"MCMMetadataIdentifier"] isKindOfClass:NSString.class] ? meta[@"MCMMetadataIdentifier"] : nil;
+                                                if (ident.length > 0) {
+                                                    @synchronized (ZXFoundContainers) {
+                                                        ZXFoundContainers[ident] = cDir;
+                                                    }
+                                                } else {
+                                                    NSString *key = strcasestr(buf, "freefiremax") ? @"com.dts.freefiremax" : @"com.dts.freefireth";
+                                                    @synchronized (ZXFoundContainers) {
+                                                        ZXFoundContainers[key] = cDir;
+                                                    }
                                                 }
                                             }
                                         }
                                     }
                                 }
+                                if ((ino & 0x3FFFF) == 0) {
+                                    ZXDebugScanInfo = [NSString stringWithFormat:@"ino=%llu h=%d cs=%d app=%d", (unsigned long long)stHome.st_ino, fsHits, csHits, appHits];
+                                }
                             }
-                            if ((ino & 0xFFFF) == 0) {
-                                ZXDebugScanInfo = [NSString stringWithFormat:@"ino=%llu h=%d cs=%d app=%d", (unsigned long long)stHome.st_ino, fsHits, csHits, appHits];
-                            }
-                        }
+                        });
                     };
 
                     ZXDebugScanInfo = [NSString stringWithFormat:@"scanning ino=%llu", (unsigned long long)stHome.st_ino];
                     if (stHome.st_ino > 0) {
-                        uint64_t lo = (stHome.st_ino > 800000) ? (stHome.st_ino - 800000) : 1;
-                        scanRange(lo, stHome.st_ino + 100000);
+                        uint64_t lo = (stHome.st_ino > 10000000) ? (stHome.st_ino - 10000000) : 1;
+                        scanRange(lo, stHome.st_ino + 200000);
                     }
                     if (stRoot.st_ino > 0) {
-                        scanRange(stRoot.st_ino, stRoot.st_ino + 300000);
+                        uint64_t rlo = (stRoot.st_ino > 2000000) ? (stRoot.st_ino - 2000000) : 1;
+                        scanRange(rlo, stRoot.st_ino + 2000000);
                     }
-                    scanRange(1, 500000);
+                    scanRange(1, 2000000);
                     ZXDebugScanInfo = [NSString stringWithFormat:@"ino=%llu h=%d cs=%d app=%d", (unsigned long long)stHome.st_ino, fsHits, csHits, appHits];
                 } else {
                     ZXDebugScanInfo = @"statfs_fail";
