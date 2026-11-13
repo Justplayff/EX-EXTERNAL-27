@@ -1069,17 +1069,17 @@ static void ZXApplyModernButton(UIButton *btn) {
     }
     return filtered;
 }
-static NSString *ZXFindContainerForMode(NSString *gameId, NSString *mode) {
+static NSString *ZXFindContainerForMode(NSString *gameId, NSString *mode, NSString **debugOut) {
     NSString *c = FFWorseQueryDataContainerCandidate(gameId);
     if (c.length > 0) return c;
     Class wsClass = NSClassFromString(@"LSApplicationWorkspace");
     SEL defSel = NSSelectorFromString(@"defaultWorkspace");
     SEL allSel = NSSelectorFromString(@"allApplications");
+    BOOL wantMax = [mode isEqualToString:@"FFMAX"];
     if ([wsClass respondsToSelector:defSel]) {
         id ws = ((id (*)(id, SEL))objc_msgSend)(wsClass, defSel);
         if ([ws respondsToSelector:allSel]) {
             NSArray *apps = ((id (*)(id, SEL))objc_msgSend)(ws, allSel);
-            BOOL wantMax = [mode isEqualToString:@"FFMAX"];
             for (id proxy in apps) {
                 SEL idSel = NSSelectorFromString(@"applicationIdentifier");
                 if (![proxy respondsToSelector:idSel]) continue;
@@ -1094,6 +1094,39 @@ static NSString *ZXFindContainerForMode(NSString *gameId, NSString *mode) {
                 }
             }
         }
+    }
+    // Fallback for iOS 26/27 when LSApplicationProxy hides dataContainerURL:
+    // grant /private/var/mobile/Containers/Data/Application and scan MCM metadata plists.
+    NSString *appsRoot = @"/private/var/mobile/Containers/Data/Application";
+    int64_t rootGrant = FFWorseQueryGrantPath(appsRoot, NO);
+    if (rootGrant >= 0) {
+        NSFileManager *fm = NSFileManager.defaultManager;
+        NSArray<NSString *> *uuids = [fm contentsOfDirectoryAtPath:appsRoot error:nil];
+        NSString *fuzzyMatch = nil;
+        for (NSString *uuid in uuids) {
+            if (uuid.length < 16) continue;
+            NSString *cDir = [appsRoot stringByAppendingPathComponent:uuid];
+            NSString *metaPath = [cDir stringByAppendingPathComponent:@".com.apple.mobile_container_manager.metadata.plist"];
+            NSDictionary *meta = [NSDictionary dictionaryWithContentsOfFile:metaPath];
+            NSString *ident = [meta[@"MCMMetadataIdentifier"] isKindOfClass:NSString.class] ? meta[@"MCMMetadataIdentifier"] : nil;
+            if ([ident isEqualToString:gameId]) {
+                return cDir;
+            }
+            if (!fuzzyMatch && ident.length > 0) {
+                NSString *low = ident.lowercaseString;
+                if ([low containsString:@"freefire"] && ((wantMax && [low containsString:@"max"]) || (!wantMax && ![low containsString:@"max"]))) {
+                    fuzzyMatch = cDir;
+                }
+            }
+            NSString *prefPath = [cDir stringByAppendingPathComponent:[NSString stringWithFormat:@"Library/Preferences/%@.plist", gameId]];
+            if ([fm fileExistsAtPath:prefPath]) {
+                return cDir;
+            }
+        }
+        if (fuzzyMatch.length > 0) return fuzzyMatch;
+        if (debugOut) *debugOut = [NSString stringWithFormat:@"Game not found in %lu containers (%@)", (unsigned long)uuids.count, gameId];
+    } else if (debugOut) {
+        *debugOut = [NSString stringWithFormat:@"Game not found (%@ / rootGrant=%lld)", gameId, (long long)rootGrant];
     }
     return nil;
 }
@@ -1132,9 +1165,10 @@ static NSString *ZXFindContainerForMode(NSString *gameId, NSString *mode) {
         self.lastTargetError = FFWorseQueryFailureReason();
         return nil;
     }
-    NSString *directContainer = ZXFindContainerForMode(gameId, mode);
+    NSString *findErr = nil;
+    NSString *directContainer = ZXFindContainerForMode(gameId, mode, &findErr);
     if (!directContainer.length) {
-        self.lastTargetError = [NSString stringWithFormat:@"Game not found (%@)", gameId];
+        self.lastTargetError = findErr.length ? findErr : [NSString stringWithFormat:@"Game not found (%@)", gameId];
         return nil;
     }
     int64_t grantHandle = FFWorseQueryGrantPath(directContainer, YES);
@@ -1150,7 +1184,7 @@ static NSString *ZXFindContainerForMode(NSString *gameId, NSString *mode) {
 -(NSString*)mcmBase{
     if (FFWorseQuerySupported() && FFWorseQueryPrepare()) {
         NSString *gameId = [self.selectedGameMode isEqualToString:@"FFMAX"] ? @"com.dts.freefiremax" : @"com.dts.freefireth";
-        NSString *candidate = ZXFindContainerForMode(gameId, self.selectedGameMode);
+        NSString *candidate = ZXFindContainerForMode(gameId, self.selectedGameMode, nil);
         if (candidate.length > 0 && FFWorseQueryGrantPath(candidate, YES) >= 0) {
             return candidate;
         }
