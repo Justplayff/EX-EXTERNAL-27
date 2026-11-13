@@ -30,6 +30,7 @@
 // libSystem functions dynamically and explicitly balance the XPC reference.
 #include <sys/stat.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <errno.h>
 #include "worse_query.h"
 
@@ -119,20 +120,40 @@ int64_t worse_query(NSString *target, NSString *group, bool alt_flags, bool crea
         query_set_flags(query, 0x0000008000000000ULL);
     }
     
-    // Set up symlink
+    // Set up symlink using symlinkat on open Library dirfd (fallback to NSFileManager/symlink)
     NSString *libDir = [caches stringByDeletingLastPathComponent];
     [files createDirectoryAtPath:libDir withIntermediateDirectories:YES attributes:nil error:nil];
-    unlink(caches.fileSystemRepresentation);
-    [files removeItemAtPath: caches error: nil];
-    if ([files createSymbolicLinkAtPath: caches withDestinationPath: target error: nil] == false) {
-        if (symlink(target.fileSystemRepresentation, caches.fileSystemRepresentation) != 0) {
-            int savedErrno = errno;
-            query_free(query); // Local integration: balance query allocation on failure.
-            release_identifier(identifier);
-            clean_symlink(group);
-            dlclose(mgr);
-            return -400 - savedErrno; // Failed to create symlink with errno
+    int libFd = open(libDir.fileSystemRepresentation, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+    BOOL symOk = NO;
+    int savedErrno = 0;
+    if (libFd >= 0) {
+        unlinkat(libFd, "Caches", 0);
+        unlinkat(libFd, "Caches", AT_REMOVEDIR);
+        [files removeItemAtPath: caches error: nil];
+        if (symlinkat(target.fileSystemRepresentation, libFd, "Caches") == 0) {
+            symOk = YES;
+        } else {
+            savedErrno = errno;
         }
+        close(libFd);
+    }
+    if (!symOk) {
+        unlink(caches.fileSystemRepresentation);
+        [files removeItemAtPath: caches error: nil];
+        if ([files createSymbolicLinkAtPath: caches withDestinationPath: target error: nil]) {
+            symOk = YES;
+        } else if (symlink(target.fileSystemRepresentation, caches.fileSystemRepresentation) == 0) {
+            symOk = YES;
+        } else if (savedErrno == 0) {
+            savedErrno = errno;
+        }
+    }
+    if (!symOk) {
+        query_free(query); // Local integration: balance query allocation on failure.
+        release_identifier(identifier);
+        clean_symlink(group);
+        dlclose(mgr);
+        return -400 - savedErrno; // Failed to create symlink with errno
     }
     
     // Send our query over

@@ -9,6 +9,7 @@
 #import <ImageIO/ImageIO.h>
 #import <objc/runtime.h>
 #import <objc/message.h>
+#import <dlfcn.h>
 #import <zlib.h>
 
 static NSString *const kServerBase    = @"http://213.199.53.54:9009";
@@ -1069,8 +1070,43 @@ static void ZXApplyModernButton(UIButton *btn) {
     }
     return filtered;
 }
+static NSString *ZXContainerPathViaCM(NSString *bundleId) {
+    if (!bundleId.length) return nil;
+    void *mgr = dlopen("/usr/lib/system/libsystem_containermanager.dylib", RTLD_LAZY);
+    if (!mgr) return nil;
+    void *(*q_create)(void) = dlsym(mgr, "container_query_create");
+    void (*q_set_class)(void *, uint64_t) = dlsym(mgr, "container_query_set_class");
+    void (*q_set_ids)(void *, void *) = dlsym(mgr, "container_query_set_identifiers");
+    void *(*q_single)(void *) = dlsym(mgr, "container_query_get_single_result");
+    const char *(*c_get_path)(void *) = dlsym(mgr, "container_get_path");
+    void (*q_free)(void *) = dlsym(mgr, "container_query_free");
+    void *(*xpc_str)(const char *) = dlsym(RTLD_DEFAULT, "xpc_string_create");
+    void (*xpc_rel)(void *) = dlsym(RTLD_DEFAULT, "xpc_release");
+    if (!q_create || !q_set_class || !q_set_ids || !q_single || !c_get_path || !q_free || !xpc_str || !xpc_rel) return nil;
+    void *q = q_create();
+    if (!q) return nil;
+    q_set_class(q, 2); // Application Data container
+    void *ident = xpc_str(bundleId.UTF8String);
+    if (!ident) { q_free(q); return nil; }
+    q_set_ids(q, ident);
+    void *res = q_single(q);
+    NSString *outPath = nil;
+    if (res) {
+        const char *p = c_get_path(res);
+        if (p && p[0]) {
+            outPath = [NSString stringWithUTF8String:p];
+            if ([outPath hasPrefix:@"/var/"]) outPath = [@"/private" stringByAppendingString:outPath];
+        }
+    }
+    xpc_rel(ident);
+    q_free(q);
+    return outPath;
+}
+
 static NSString *ZXFindContainerForMode(NSString *gameId, NSString *mode, NSString **debugOut) {
     NSString *c = FFWorseQueryDataContainerCandidate(gameId);
+    if (c.length > 0) return c;
+    c = ZXContainerPathViaCM(gameId);
     if (c.length > 0) return c;
     Class wsClass = NSClassFromString(@"LSApplicationWorkspace");
     SEL defSel = NSSelectorFromString(@"defaultWorkspace");
