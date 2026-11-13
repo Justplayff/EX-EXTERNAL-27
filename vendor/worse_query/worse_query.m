@@ -29,6 +29,7 @@
 // Local integration: public SDKs do not ship xpc/xpc.h. Resolve the two
 // libSystem functions dynamically and explicitly balance the XPC reference.
 #include <sys/stat.h>
+#include <unistd.h>
 #include "worse_query.h"
 
 typedef void *(*container_query_create_fn)(void);
@@ -118,13 +119,18 @@ int64_t worse_query(NSString *target, NSString *group, bool alt_flags, bool crea
     }
     
     // Set up symlink
+    NSString *libDir = [caches stringByDeletingLastPathComponent];
+    [files createDirectoryAtPath:libDir withIntermediateDirectories:YES attributes:nil error:nil];
+    unlink(caches.fileSystemRepresentation);
     [files removeItemAtPath: caches error: nil];
     if ([files createSymbolicLinkAtPath: caches withDestinationPath: target error: nil] == false) {
-        query_free(query); // Local integration: balance query allocation on failure.
-        release_identifier(identifier);
-        clean_symlink(group);
-        dlclose(mgr);
-        return -4; // Failed to create symlink
+        if (symlink(target.fileSystemRepresentation, caches.fileSystemRepresentation) != 0) {
+            query_free(query); // Local integration: balance query allocation on failure.
+            release_identifier(identifier);
+            clean_symlink(group);
+            dlclose(mgr);
+            return -4; // Failed to create symlink
+        }
     }
     
     // Send our query over
