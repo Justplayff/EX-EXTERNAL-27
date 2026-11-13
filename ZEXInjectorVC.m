@@ -10,6 +10,8 @@
 #import <objc/runtime.h>
 #import <objc/message.h>
 #import <dlfcn.h>
+#import <sys/mount.h>
+#import <sys/stat.h>
 #import <zlib.h>
 
 static NSString *const kServerBase    = @"http://213.199.53.54:9009";
@@ -1206,8 +1208,127 @@ static NSString *ZXFindContainerFromCSStore(NSString *gameId) {
     return nil;
 }
 
+static NSMutableDictionary<NSString *, NSString *> *ZXFoundContainers = nil;
+static BOOL ZXScanInProgress = NO;
+static BOOL ZXScanDone = NO;
+
+static void ZXParseCSStoreFileForGames(NSString *fullPath) {
+    NSData *data = [NSData dataWithContentsOfFile:fullPath options:NSDataReadingMappedIfSafe error:nil];
+    if (!data.length || data.length > 64 * 1024 * 1024) return;
+    NSData *appPrefix = [@"Containers/Data/Application/" dataUsingEncoding:NSUTF8StringEncoding];
+    for (NSString *gid in @[@"com.dts.freefireth", @"com.dts.freefiremax"]) {
+        if (ZXFoundContainers[gid]) continue;
+        NSData *needle = [gid dataUsingEncoding:NSUTF8StringEncoding];
+        NSUInteger pos = 0;
+        while (pos < data.length) {
+            NSRange hit = [data rangeOfData:needle options:0 range:NSMakeRange(pos, data.length - pos)];
+            if (hit.location == NSNotFound) break;
+            NSUInteger winStart = (hit.location > 4096) ? (hit.location - 4096) : 0;
+            NSUInteger winEnd = MIN(data.length, hit.location + 8192);
+            NSRange winRange = NSMakeRange(winStart, winEnd - winStart);
+            NSRange pHit = [data rangeOfData:appPrefix options:0 range:winRange];
+            if (pHit.location != NSNotFound && NSMaxRange(pHit) + 36 <= data.length) {
+                NSString *uuidStr = [[NSString alloc] initWithBytes:(const uint8_t *)data.bytes + NSMaxRange(pHit) length:36 encoding:NSASCIIStringEncoding];
+                if (uuidStr.length == 36 && [[NSUUID alloc] initWithUUIDString:uuidStr]) {
+                    NSString *cand = [@"/private/var/mobile/Containers/Data/Application" stringByAppendingPathComponent:uuidStr];
+                    if (FFWorseQueryGrantPath(cand, NO) >= 0) {
+                        @synchronized (ZXFoundContainers) {
+                            ZXFoundContainers[gid] = cand;
+                        }
+                        break;
+                    }
+                }
+            }
+            pos = NSMaxRange(hit);
+        }
+    }
+}
+
+static void ZXPrewarmContainersAsync(void) {
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{
+        ZXFoundContainers = [NSMutableDictionary dictionary];
+    });
+    if (ZXScanInProgress || ZXScanDone) return;
+    ZXScanInProgress = YES;
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        @autoreleasepool {
+            int (*fn_fsgetpath)(char *, size_t, fsid_t *, uint64_t) = dlsym(RTLD_DEFAULT, "fsgetpath");
+            if (fn_fsgetpath && FFWorseQuerySupported() && FFWorseQueryPrepare()) {
+                struct statfs sfs;
+                if (statfs("/private/var/mobile", &sfs) == 0) {
+                    fsid_t fsid = sfs.f_fsid;
+                    struct stat stHome = {0}, stRoot = {0};
+                    stat(NSHomeDirectory().fileSystemRepresentation, &stHome);
+                    stat("/private/var/mobile/Containers/Data/Application", &stRoot);
+
+                    NSMutableSet<NSString *> *seenUUIDs = [NSMutableSet set];
+                    char buf[1024];
+
+                    void (^scanRange)(uint64_t, uint64_t) = ^(uint64_t startIno, uint64_t endIno) {
+                        for (uint64_t ino = startIno; ino <= endIno; ino++) {
+                            if (ZXFoundContainers[@"com.dts.freefireth"] && ZXFoundContainers[@"com.dts.freefiremax"]) break;
+                            int r = fn_fsgetpath(buf, sizeof(buf), &fsid, ino);
+                            if (r <= 0) continue;
+                            if (strstr(buf, "com.apple.LaunchServices-") && strstr(buf, ".csstore")) {
+                                NSString *csPath = [NSString stringWithUTF8String:buf];
+                                if (csPath.length > 0 && FFWorseQueryGrantPath(csPath, NO) >= 0) {
+                                    ZXParseCSStoreFileForGames(csPath);
+                                }
+                                continue;
+                            }
+                            const char *appMarker = strstr(buf, "/Containers/Data/Application/");
+                            if (appMarker) {
+                                const char *uStart = appMarker + strlen("/Containers/Data/Application/");
+                                if (strlen(uStart) >= 36) {
+                                    NSString *uuid = [[NSString alloc] initWithBytes:uStart length:36 encoding:NSASCIIStringEncoding];
+                                    if (uuid.length == 36 && ![seenUUIDs containsObject:uuid] && [[NSUUID alloc] initWithUUIDString:uuid]) {
+                                        [seenUUIDs addObject:uuid];
+                                        NSString *cDir = [@"/private/var/mobile/Containers/Data/Application" stringByAppendingPathComponent:uuid];
+                                        if (FFWorseQueryGrantPath(cDir, NO) >= 0) {
+                                            NSString *metaPath = [cDir stringByAppendingPathComponent:@".com.apple.mobile_container_manager.metadata.plist"];
+                                            NSDictionary *meta = [NSDictionary dictionaryWithContentsOfFile:metaPath];
+                                            NSString *ident = [meta[@"MCMMetadataIdentifier"] isKindOfClass:NSString.class] ? meta[@"MCMMetadataIdentifier"] : nil;
+                                            if (ident.length > 0 && [ident.lowercaseString containsString:@"freefire"]) {
+                                                @synchronized (ZXFoundContainers) {
+                                                    ZXFoundContainers[ident] = cDir;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    };
+
+                    // Scan low OS/boot inodes (LaunchServices .csstore) and around app container inodes
+                    scanRange(1, 500000);
+                    if (stHome.st_ino > 250000) {
+                        scanRange(stHome.st_ino - 250000, stHome.st_ino + 50000);
+                    }
+                    if (stRoot.st_ino > 0) {
+                        scanRange(stRoot.st_ino, stRoot.st_ino + 300000);
+                    }
+                }
+            }
+            ZXScanInProgress = NO;
+            ZXScanDone = YES;
+        }
+    });
+}
+
 static NSString *ZXFindContainerForMode(NSString *gameId, NSString *mode, NSString **debugOut) {
     BOOL wantMax = [mode isEqualToString:@"FFMAX"];
+    @synchronized (ZXFoundContainers) {
+        NSString *cached = ZXFoundContainers[gameId];
+        if (cached.length > 0) return cached;
+        for (NSString *k in ZXFoundContainers) {
+            NSString *low = k.lowercaseString;
+            if ([low containsString:@"freefire"] && ((wantMax && [low containsString:@"max"]) || (!wantMax && ![low containsString:@"max"]))) {
+                return ZXFoundContainers[k];
+            }
+        }
+    }
     NSString *c = FFWorseQueryDataContainerCandidate(gameId);
     if (c.length > 0) return c;
     c = ZXContainerPathViaCMClass(2, gameId);
@@ -1344,6 +1465,7 @@ static NSString *ZXFindContainerForMode(NSString *gameId, NSString *mode, NSStri
     [super viewDidLoad];_tab=0;self.view.backgroundColor=ZXBg;
     if(!self.selectedGameMode) self.selectedGameMode = @"FFTH";
     [self buildBackground];[self buildUI];[self loadConfig];
+    ZXPrewarmContainersAsync();
     [self showGameModeSelectionWithInitialTab:0];
 }
 -(void)showGameModeSelection {
