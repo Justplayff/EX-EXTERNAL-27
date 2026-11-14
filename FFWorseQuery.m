@@ -44,10 +44,17 @@ static NSArray<NSString *> *FFWQAppGroups(void) {
         CFTypeRef value = copyEntitlement(task, CFSTR("com.apple.security.application-groups"), NULL);
         if (value) {
             if (CFGetTypeID(value) == CFArrayGetTypeID()) {
-                for (id group in (__bridge NSArray *)value)
-                    if ([group isKindOfClass:NSString.class] && [group hasPrefix:@"group."] &&
-                        ![group isEqualToString:@"group.com.zex.external"])
-                        [groups addObject:group];
+                BOOL hasDefaultGroup = NO;
+                for (id group in (__bridge NSArray *)value) {
+                    if ([group isKindOfClass:NSString.class] && [group hasPrefix:@"group."]) {
+                        if ([group isEqualToString:@"group.com.zex.external"]) {
+                            hasDefaultGroup = YES;
+                        } else {
+                            [groups addObject:group];
+                        }
+                    }
+                }
+                if (hasDefaultGroup) [groups addObject:@"group.com.zex.external"];
             }
             CFRelease(value);
         }
@@ -92,16 +99,14 @@ BOOL FFWorseQueryPrepare(void) {
         if (FFWQAttempted) return FFWQGroup.length > 0;
         FFWQAttempted = YES;
         NSFileManager *files = NSFileManager.defaultManager;
-        for (NSString *group in FFWQAppGroups()) {
+        NSArray<NSString *> *allGroups = FFWQAppGroups();
+        int nilCount = 0;
+        int mkErrCount = 0;
+        for (NSString *group in allGroups) {
             NSURL *root = [files containerURLForSecurityApplicationGroupIdentifier:group];
-            if (!root) continue; // An Info.plist value alone does not grant an entitlement.
+            if (!root) { nilCount++; continue; } // An Info.plist value alone does not grant an entitlement.
             NSString *library = [root.path stringByAppendingPathComponent:@"Library"];
-            if (![files createDirectoryAtPath:library withIntermediateDirectories:YES attributes:nil error:nil]) continue;
-            // Verify symlink creation is actually permitted in this App Group container.
-            NSString *probe = [library stringByAppendingPathComponent:@".wq-probe"];
-            unlink(probe.fileSystemRepresentation);
-            if (symlink("/tmp", probe.fileSystemRepresentation) != 0) continue;
-            unlink(probe.fileSystemRepresentation);
+            if (![files createDirectoryAtPath:library withIntermediateDirectories:YES attributes:nil error:nil]) { mkErrCount++; continue; }
             NSString *caches = [library stringByAppendingPathComponent:@"Caches"];
             NSString *backup = [library stringByAppendingPathComponent:@".ffcachemanager-wq-caches-backup"];
             if (!FFWQRestoreCaches(caches, backup)) return NO;
@@ -110,7 +115,7 @@ BOOL FFWorseQueryPrepare(void) {
             FFWQFailure = nil;
             return YES;
         }
-        FFWQFailure = @"worse_query needs a provisioned App Group. Enable App Groups for this app, then sign it with a matching profile; adding the entitlement text alone is insufficient.";
+        FFWQFailure = [NSString stringWithFormat:@"worse_query needs a provisioned App Group (g=%lu nil=%d mk=%d). Enable App Groups when signing.", (unsigned long)allGroups.count, nilCount, mkErrCount];
         return NO;
     } @finally {
         [FFWQLock unlock];
