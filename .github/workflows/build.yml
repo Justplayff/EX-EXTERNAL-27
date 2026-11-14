@@ -28,10 +28,12 @@ jobs:
           ./compile.sh
 
       - name: Upload IPA Artifact
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: ZEX-EXTERNAL-IPA
           path: ZEX_EXTERNAL.ipa
+          retention-days: 1
 
       - name: Release IPA directly
         uses: softprops/action-gh-release@v2
