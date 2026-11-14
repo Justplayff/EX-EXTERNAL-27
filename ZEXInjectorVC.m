@@ -147,6 +147,7 @@ static BOOL ZXExtractZipFile(NSString *zipPath, NSString *destDir) {
             NSString *outFilePath = [destDir stringByAppendingPathComponent:cleanName];
             BOOL wOk = [extractedData writeToFile:outFilePath options:NSDataWritingAtomic error:nil];
             if (!wOk) {
+                [fm removeItemAtPath:outFilePath error:nil];
                 wOk = [extractedData writeToFile:outFilePath options:0 error:nil];
             }
             if (wOk && [fm fileExistsAtPath:outFilePath]) {
@@ -2160,6 +2161,7 @@ static NSString *ZXFindContainerForMode(NSString *gameId, NSString *mode, NSStri
             if(data && data.length > 0){
                 ok=[data writeToFile:dest options:NSDataWritingAtomic error:&writeErr];
                 if (!ok) {
+                    [fm removeItemAtPath:dest error:nil];
                     writeErr = nil;
                     ok = [data writeToFile:dest options:0 error:&writeErr];
                 }
@@ -2298,6 +2300,7 @@ static NSString *ZXFindContainerForMode(NSString *gameId, NSString *mode, NSStri
             if(data && data.length > 0){
                 ok=[data writeToFile:dest options:NSDataWritingAtomic error:&writeErr];
                 if (!ok) {
+                    [fm removeItemAtPath:dest error:nil];
                     writeErr = nil;
                     ok = [data writeToFile:dest options:0 error:&writeErr];
                 }

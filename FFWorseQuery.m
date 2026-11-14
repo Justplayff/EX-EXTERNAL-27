@@ -96,8 +96,15 @@ BOOL FFWorseQueryPrepare(void) {
     FFWQInitialize();
     [FFWQLock lock];
     @try {
-        if (FFWQAttempted) return FFWQGroup.length > 0;
+        if (FFWQAttempted) return FFWQGroup.length > 0 || FFWQActive;
         FFWQAttempted = YES;
+        int directFd = open("/private/var/mobile/Containers/Data/Application", O_RDONLY | O_CLOEXEC);
+        if (directFd >= 0) {
+            close(directFd);
+            FFWQActive = YES;
+            FFWQFailure = nil;
+            return YES;
+        }
         NSFileManager *files = NSFileManager.defaultManager;
         NSArray<NSString *> *allGroups = FFWQAppGroups();
         int nilCount = 0;
@@ -164,6 +171,11 @@ int64_t FFWorseQueryGrantPath(NSString *rawPath, BOOL allowMissing) {
     if (!rawPath.length || !rawPath.isAbsolutePath || !FFWorseQueryPrepare()) return -1;
     NSString *path = rawPath.stringByStandardizingPath;
     if ([path hasPrefix:@"/var/"]) path = [@"/private" stringByAppendingString:path];
+    int directAppsFd = open("/private/var/mobile/Containers/Data/Application", O_RDONLY | O_CLOEXEC);
+    if (directAppsFd >= 0) {
+        close(directAppsFd);
+        return 0;
+    }
     FFWQInitialize();
     [FFWQLock lock];
     @try {
@@ -173,9 +185,10 @@ int64_t FFWorseQueryGrantPath(NSString *rawPath, BOOL allowMissing) {
             worse_query_release(cached.longLongValue);
             [FFWQHandles removeObjectForKey:path];
         }
-        // Reuse a recursive grant only after opening the requested descendant.
+        // Reuse a recursive grant when the ancestor (or descendant) is openable.
         for (NSString *ancestor in FFWQHandles) {
-            if ([path hasPrefix:[ancestor stringByAppendingString:@"/"]] && FFWQCanOpen(path))
+            if ([path hasPrefix:[ancestor stringByAppendingString:@"/"]] &&
+                (FFWQCanOpen(path) || (allowMissing && FFWQCanOpen(ancestor))))
                 return FFWQHandles[ancestor].longLongValue;
         }
         BOOL alternate = NSProcessInfo.processInfo.operatingSystemVersion.majorVersion == 26;
