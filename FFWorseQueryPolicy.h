@@ -9,6 +9,7 @@
 static inline bool FFWorseQueryVersionSupported(long major, long minor, long patch,
                                                 const char *build) {
     if (minor < 0 || patch < 0) return false;
+    if (major >= 15 && major <= 18) return true;
     if (major == 26) return minor < 7 || (minor == 7 && patch <= 2);
     if (major != 27) return false;
     if (minor < 2) return true;
