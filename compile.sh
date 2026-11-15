@@ -10,7 +10,7 @@ compile_file() {
     local src="$1"
     local obj="${src//\//_}.o"
     echo "Compiling $src..."
-    clang -arch arm64 -isysroot "$SDK" -miphoneos-version-min=15.0 -fobjc-arc -Wno-everything \
+    clang -arch arm64 -isysroot "$SDK" -miphoneos-version-min=15.0 -O2 -fvisibility=hidden -fobjc-arc -Wno-everything \
       -DFF_3105_MCM=1 \
       -I. -I./vendor/worse_query \
       -c "$src" -o "$obj"
@@ -42,6 +42,7 @@ clang -arch arm64 -isysroot "$SDK" -miphoneos-version-min=15.0 \
 echo "=== Packaging IPA ==="
 mkdir -p Payload/ZEXInjector.app
 cp ZEXInjector Payload/ZEXInjector.app/
+strip -x Payload/ZEXInjector.app/ZEXInjector 2>/dev/null || true
 cp Info.plist Payload/ZEXInjector.app/ 2>/dev/null || true
 if [ -d Resources ]; then
     cp -R Resources/. Payload/ZEXInjector.app/ 2>/dev/null || true

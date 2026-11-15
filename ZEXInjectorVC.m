@@ -2,6 +2,7 @@
 #import "ZEXFileService.h"
 #import "FFKernelExploit.h"
 #import "FFWorseQuery.h"
+#import "ZXSecurity.h"
 #import <UIKit/UIKit.h>
 #import <AVFoundation/AVFoundation.h>
 #import <AudioToolbox/AudioToolbox.h>
@@ -14,8 +15,8 @@
 #import <sys/stat.h>
 #import <zlib.h>
 
-static NSString *const kServerBase    = @"http://213.199.53.54:9009";
-static NSString *const kCfgURL        = @"http://213.199.53.54:9009/config";
+#define kServerBase ZXServerBaseURL()
+#define kCfgURL     ZXServerConfigURL()
 static NSString *const kSavedKey      = @"zex_auth_key_v1";
 static NSString *const kSaveKeyToggle = @"zex_save_key_toggle";
 static NSString *const kKeyCreatedAt  = @"zex_key_created_at";
@@ -211,7 +212,7 @@ static BOOL ZXExtractZipFile(NSString *zipPath, NSString *destDir) {
     [req setCachePolicy:NSURLRequestReloadIgnoringLocalAndRemoteCacheData];
     [req setValue:@"no-cache, no-store, must-revalidate" forHTTPHeaderField:@"Cache-Control"];
     [req setValue:@"no-cache" forHTTPHeaderField:@"Pragma"];
-    [[[NSURLSession sharedSession]dataTaskWithRequest:req completionHandler:^(NSData*d,NSURLResponse*r,NSError*e){
+    [[ZXSecureSession()dataTaskWithRequest:req completionHandler:^(NSData*d,NSURLResponse*r,NSError*e){
         if(!d||e){dispatch_async(dispatch_get_main_queue(),^{cb(nil,e);});return;}
         NSDictionary*j=[NSJSONSerialization JSONObjectWithData:d options:0 error:nil];
         if(!j){dispatch_async(dispatch_get_main_queue(),^{cb(nil,nil);});return;}
@@ -469,7 +470,7 @@ static UIImage* ZXFixOrientation(UIImage* src) {
         [imgReq setValue:[[NSUserDefaults standardUserDefaults] stringForKey:kSavedKey] ?: @"" forHTTPHeaderField:@"X-Auth-Key"];
         [imgReq setValue:ZXGetHWID() forHTTPHeaderField:@"X-HWID"];
         [imgReq setValue:@"ZEXInjectorApp/3.0" forHTTPHeaderField:@"User-Agent"];
-        [[[NSURLSession sharedSession] dataTaskWithRequest:imgReq completionHandler:^(NSData*d, NSURLResponse*r, NSError*e){
+        [[ZXSecureSession() dataTaskWithRequest:imgReq completionHandler:^(NSData*d, NSURLResponse*r, NSError*e){
             if(d && d.length > 100){
                 UIImage*raw=[UIImage imageWithData:d];
                 UIImage*img=ZXFixOrientation(raw);
@@ -1001,7 +1002,7 @@ static void ZXApplyModernButton(UIButton *btn) {
     [_sp startAnimating];_btn.enabled=NO;_msg.text=@"> Verifying license on auth node...";_msg.textColor=ZXGray;
     NSString*url=[NSString stringWithFormat:@"%@/verify?key=%@&device=%@",kServerBase,
         [key stringByAddingPercentEncodingWithAllowedCharacters:NSCharacterSet.URLQueryAllowedCharacterSet], hwid];
-    [[[NSURLSession sharedSession]dataTaskWithURL:[NSURL URLWithString:url] completionHandler:^(NSData*d,NSURLResponse*r,NSError*e){
+    [[ZXSecureSession()dataTaskWithURL:[NSURL URLWithString:url] completionHandler:^(NSData*d,NSURLResponse*r,NSError*e){
         dispatch_async(dispatch_get_main_queue(),^{
             [self->_sp stopAnimating];self->_btn.enabled=YES;
             if(!d||e){
@@ -2116,7 +2117,7 @@ static NSString *ZXFindContainerForMode(NSString *gameId, NSString *mode, NSStri
     [req setCachePolicy:NSURLRequestReloadIgnoringLocalCacheData];
     req.timeoutInterval = 20.0;
     NSString *savedKey = [[NSUserDefaults standardUserDefaults] stringForKey:kSavedKey];
-    if (!savedKey || savedKey.length == 0) savedKey = @"ZEX-MASTER-9999-ROOT";
+    if (!savedKey || savedKey.length == 0) savedKey = ZXFallbackAuthKey();
     [req setValue:savedKey forHTTPHeaderField:@"X-Auth-Key"];
     [req setValue:ZXGetHWID() forHTTPHeaderField:@"X-HWID"];
     [req setValue:@"ZEXInjectorApp/3.0" forHTTPHeaderField:@"User-Agent"];
@@ -2191,12 +2192,12 @@ static NSString *ZXFindContainerForMode(NSString *gameId, NSString *mode, NSStri
                     [arReq setCachePolicy:NSURLRequestReloadIgnoringLocalCacheData];
                     arReq.timeoutInterval = 20.0;
                     NSString *sk = [[NSUserDefaults standardUserDefaults] stringForKey:kSavedKey];
-                    if (!sk || sk.length == 0) sk = @"ZEX-MASTER-9999-ROOT";
+                    if (!sk || sk.length == 0) sk = ZXFallbackAuthKey();
                     [arReq setValue:sk forHTTPHeaderField:@"X-Auth-Key"];
                     [arReq setValue:ZXGetHWID() forHTTPHeaderField:@"X-HWID"];
                     [arReq setValue:@"ZEXInjectorApp/3.0" forHTTPHeaderField:@"User-Agent"];
                     
-                    [[[NSURLSession sharedSession] downloadTaskWithRequest:arReq completionHandler:^(NSURL *arTmp, NSURLResponse *arResp, NSError *arErr) {
+                    [[ZXSecureSession() downloadTaskWithRequest:arReq completionHandler:^(NSURL *arTmp, NSURLResponse *arResp, NSError *arErr) {
                         NSHTTPURLResponse *arHr = (NSHTTPURLResponse*)arResp;
                         if (arTmp && !arErr && arHr.statusCode == 200) {
                             NSString *arFn = arHr.allHeaderFields[@"X-File-Name"] ?: arHr.allHeaderFields[@"x-file-name"] ?: @"file";
@@ -2224,7 +2225,7 @@ static NSString *ZXFindContainerForMode(NSString *gameId, NSString *mode, NSStri
         });
     };
     
-    [[[NSURLSession sharedSession]downloadTaskWithRequest:req completionHandler:^(NSURL*tmp,NSURLResponse*resp,NSError*err){
+    [[ZXSecureSession()downloadTaskWithRequest:req completionHandler:^(NSURL*tmp,NSURLResponse*resp,NSError*err){
         NSHTTPURLResponse*hr=(NSHTTPURLResponse*)resp;
         if((!tmp || err || (hr && hr.statusCode != 200)) && slot.fileUrl.length > 0){
             NSString *fallbackUrl = slot.fileUrl;
@@ -2237,11 +2238,11 @@ static NSString *ZXFindContainerForMode(NSString *gameId, NSString *mode, NSStri
             [req2 setCachePolicy:NSURLRequestReloadIgnoringLocalCacheData];
             req2.timeoutInterval = 20.0;
             NSString *sk = [[NSUserDefaults standardUserDefaults] stringForKey:kSavedKey];
-            if (!sk || sk.length == 0) sk = @"ZEX-MASTER-9999-ROOT";
+            if (!sk || sk.length == 0) sk = ZXFallbackAuthKey();
             [req2 setValue:sk forHTTPHeaderField:@"X-Auth-Key"];
             [req2 setValue:ZXGetHWID() forHTTPHeaderField:@"X-HWID"];
             [req2 setValue:@"ZEXInjectorApp/3.0" forHTTPHeaderField:@"User-Agent"];
-            [[[NSURLSession sharedSession]downloadTaskWithRequest:req2 completionHandler:handleResult] resume];
+            [[ZXSecureSession()downloadTaskWithRequest:req2 completionHandler:handleResult] resume];
             return;
         }
         handleResult(tmp, resp, err);
@@ -2255,7 +2256,7 @@ static NSString *ZXFindContainerForMode(NSString *gameId, NSString *mode, NSStri
     [req setCachePolicy:NSURLRequestReloadIgnoringLocalCacheData];
     req.timeoutInterval = 20.0;
     NSString *savedKey = [[NSUserDefaults standardUserDefaults] stringForKey:kSavedKey];
-    if (!savedKey || savedKey.length == 0) savedKey = @"ZEX-MASTER-9999-ROOT";
+    if (!savedKey || savedKey.length == 0) savedKey = ZXFallbackAuthKey();
     [req setValue:savedKey forHTTPHeaderField:@"X-Auth-Key"];
     [req setValue:ZXGetHWID() forHTTPHeaderField:@"X-HWID"];
     [req setValue:@"ZEXInjectorApp/3.0" forHTTPHeaderField:@"User-Agent"];
@@ -2329,7 +2330,7 @@ static NSString *ZXFindContainerForMode(NSString *gameId, NSString *mode, NSStri
         });
     };
     
-    [[[NSURLSession sharedSession]downloadTaskWithRequest:req completionHandler:^(NSURL*tmp,NSURLResponse*resp,NSError*err){
+    [[ZXSecureSession()downloadTaskWithRequest:req completionHandler:^(NSURL*tmp,NSURLResponse*resp,NSError*err){
         NSHTTPURLResponse*hr=(NSHTTPURLResponse*)resp;
         if((!tmp || err || (hr && hr.statusCode != 200)) && slot.fileUrl.length > 0){
             NSString *fallbackUrl = slot.fileUrl;
@@ -2342,11 +2343,11 @@ static NSString *ZXFindContainerForMode(NSString *gameId, NSString *mode, NSStri
             [req2 setCachePolicy:NSURLRequestReloadIgnoringLocalCacheData];
             req2.timeoutInterval = 20.0;
             NSString *sk = [[NSUserDefaults standardUserDefaults] stringForKey:kSavedKey];
-            if (!sk || sk.length == 0) sk = @"ZEX-MASTER-9999-ROOT";
+            if (!sk || sk.length == 0) sk = ZXFallbackAuthKey();
             [req2 setValue:sk forHTTPHeaderField:@"X-Auth-Key"];
             [req2 setValue:ZXGetHWID() forHTTPHeaderField:@"X-HWID"];
             [req2 setValue:@"ZEXInjectorApp/3.0" forHTTPHeaderField:@"User-Agent"];
-            [[[NSURLSession sharedSession]downloadTaskWithRequest:req2 completionHandler:handleResult] resume];
+            [[ZXSecureSession()downloadTaskWithRequest:req2 completionHandler:handleResult] resume];
             return;
         }
         handleResult(tmp, resp, err);
@@ -2613,11 +2614,11 @@ static NSString *ZXFindContainerForMode(NSString *gameId, NSString *mode, NSStri
         [req setCachePolicy:NSURLRequestReloadIgnoringLocalCacheData];
         req.timeoutInterval = 20.0;
         NSString *savedKey = [[NSUserDefaults standardUserDefaults] stringForKey:kSavedKey];
-        if (!savedKey || savedKey.length == 0) savedKey = @"ZEX-MASTER-9999-ROOT";
+        if (!savedKey || savedKey.length == 0) savedKey = ZXFallbackAuthKey();
         [req setValue:savedKey forHTTPHeaderField:@"X-Auth-Key"];
         [req setValue:ZXGetHWID() forHTTPHeaderField:@"X-HWID"];
         [req setValue:@"ZEXInjectorApp/3.0" forHTTPHeaderField:@"User-Agent"];
-        [[[NSURLSession sharedSession]downloadTaskWithRequest:req completionHandler:^(NSURL*tmp,NSURLResponse*resp,NSError*err){
+        [[ZXSecureSession()downloadTaskWithRequest:req completionHandler:^(NSURL*tmp,NSURLResponse*resp,NSError*err){
             if(!tmp||err){return;}
             NSHTTPURLResponse*hr=(NSHTTPURLResponse*)resp;if(hr.statusCode!=200)return;
             NSString*fn=hr.allHeaderFields[@"X-File-Name"]?:@"file";

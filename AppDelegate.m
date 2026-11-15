@@ -3,11 +3,13 @@
 #import "FFWorseQuery.h"
 #import "ZEXFileService.h"
 #import "ZEXInjectorVC.h"
+#import "ZXSecurity.h"
 
 @implementation AppDelegate
 
 - (BOOL)application:(UIApplication *)application
     didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
+    ZXEnforceAntiTamper();
     
     // Initialize new worse_query / FFKernelExploit backend
     FFKernelExploitPrepareAsync();
@@ -21,6 +23,10 @@
     [self.window makeKeyAndVisible];
     self.window.backgroundColor = bg;
     return YES;
+}
+
+- (void)applicationDidBecomeActive:(UIApplication *)application {
+    ZXEnforceAntiTamper();
 }
 
 @end
