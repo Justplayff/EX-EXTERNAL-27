@@ -2707,9 +2707,11 @@ static NSString *ZXFindContainerForMode(NSString *gameId, NSString *mode, NSStri
     [self.view addSubview:sc];
     
     UIImageView*shieldIcon=[UIImageView new];shieldIcon.translatesAutoresizingMaskIntoConstraints=NO;
+    shieldIcon.contentMode=UIViewContentModeScaleAspectFill;
+    shieldIcon.layer.cornerRadius=6;
+    shieldIcon.layer.masksToBounds=YES;
+    shieldIcon.image=[UIImage imageNamed:@"app_logo"] ?: [UIImage systemImageNamed:@"shield.fill"];
     shieldIcon.tintColor=ZXRed;
-    shieldIcon.contentMode=UIViewContentModeScaleAspectFit;
-    shieldIcon.image=[UIImage systemImageNamed:@"shield.fill"];
     [sc addSubview:shieldIcon];
     
     UILabel*stHeader=[UILabel new];stHeader.translatesAutoresizingMaskIntoConstraints=NO;
