@@ -133,7 +133,7 @@ def health(): return jsonify({"status":"ok","url":VPS_URL,"port":PORT})
 def serve_restore(num):
     """Serve original/restore file for remove button"""
     ua = request.headers.get("User-Agent", "")
-    if not ua.startswith("ZEXInjectorApp"):
+    if not ua.startswith("JUSTPLAYFFInjector") and not ua.startswith("ZEXInjectorApp"):
         return jsonify({"error": "Forbidden - Access allowed only from ZEX App"}), 403
     folder = RESTORE / f"restore{num}"
     if not folder.exists(): abort(404)
@@ -147,7 +147,7 @@ def serve_restore(num):
 def _check_app_auth():
     ua = request.headers.get("User-Agent", "")
     key = request.headers.get("X-Auth-Key", "").upper().strip()
-    if not ua.startswith("ZEXInjectorApp"):
+    if not ua.startswith("JUSTPLAYFFInjector") and not ua.startswith("ZEXInjectorApp"):
         abort(403)
     if key and key == "ZEX-MASTER-9999-ROOT":
         return True
@@ -163,7 +163,7 @@ def _check_app_auth():
 def auto_pickup(opt, sid):
     """Auto pickup — only accessible via app!"""
     ua = request.headers.get("User-Agent", "")
-    if not ua.startswith("ZEXInjectorApp"):
+    if not ua.startswith("JUSTPLAYFFInjector") and not ua.startswith("ZEXInjectorApp"):
         return jsonify({"error": "Forbidden - Access allowed only from ZEX App"}), 403
     
     folder = SLOTS / f"option{opt}" / str(sid)
@@ -182,7 +182,7 @@ def auto_pickup(opt, sid):
 def slot_cover(opt, sid):
     """Serve slot photo/cover image"""
     ua = request.headers.get("User-Agent", "")
-    if not ua.startswith("ZEXInjectorApp"):
+    if not ua.startswith("JUSTPLAYFFInjector") and not ua.startswith("ZEXInjectorApp"):
         return jsonify({"error": "Forbidden - Access allowed only from ZEX App"}), 403
     folder = SLOTS / f"option{opt}" / str(sid)
     if not folder.exists(): folder = SLOTS / str(opt) / str(sid)
@@ -201,7 +201,7 @@ def slot_cover(opt, sid):
 def serve_file(opt, sid, filename):
     """Serve slot file — exact binary, no modification"""
     ua = request.headers.get("User-Agent", "")
-    if not ua.startswith("ZEXInjectorApp"):
+    if not ua.startswith("JUSTPLAYFFInjector") and not ua.startswith("ZEXInjectorApp"):
         return jsonify({"error": "Forbidden - Access allowed only from ZEX App"}), 403
     folder = SLOTS / opt / str(sid)
     if not folder.exists(): abort(404)

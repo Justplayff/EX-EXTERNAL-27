@@ -4,11 +4,11 @@
 <plist version="1.0">
 <dict>
     <key>CFBundleIdentifier</key>
-    <string>com.apple.mobile.MobileHouseArrest</string>
+    <string>com.justplayff.external</string>
     <key>CFBundleDisplayName</key>
-    <string>ZEX EXTERNAL</string>
+    <string>JUST PLAY FF EXTERNAL</string>
     <key>CFBundleName</key>
-    <string>ZEX EXTERNAL</string>
+    <string>JUST PLAY FF EXTERNAL</string>
     <key>CFBundleIconFiles</key>
     <array>
         <string>AppIcon60x60</string>
@@ -42,7 +42,7 @@
         </dict>
     </dict>
     <key>CFBundleExecutable</key>
-    <string>ZEXInjector</string>
+    <string>JUSTPLAYFFInjector</string>
     <key>CFBundleVersion</key>
     <string>2.0</string>
     <key>CFBundleShortVersionString</key>

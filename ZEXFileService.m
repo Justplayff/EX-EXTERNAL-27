@@ -18,7 +18,7 @@
         prepared = FFWorseQueryPrepare();
     }
     NSString *docs = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject;
-    _virtualRoot = [docs stringByAppendingPathComponent:@"ZEXVirtualRoot"];
+    _virtualRoot = [docs stringByAppendingPathComponent:@"JUSTPLAYFFVirtualRoot"];
     _ready = prepared || FFKernelExploitHasSandboxAccess();
     return self;
 }

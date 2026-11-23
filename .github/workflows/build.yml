@@ -31,14 +31,14 @@ jobs:
         continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
-          name: ZEX-EXTERNAL-IPA
-          path: ZEX_EXTERNAL.ipa
+          name: JUST-PLAY-FF-EXTERNAL-IPA
+          path: JUST_PLAY_FF_EXTERNAL.ipa
           retention-days: 1
 
       - name: Release IPA directly
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
-          files: ZEX_EXTERNAL.ipa
+          files: JUST_PLAY_FF_EXTERNAL.ipa
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,6 +1,6 @@
 #import "FFWorseQuery.h"
 #import "FFWorseQueryPolicy.h"
-#import "vendor/worse_query/worse_query.h"
+#import "worse_query/worse_query.h"
 #import <dlfcn.h>
 #import <objc/message.h>
 #import <sys/sysctl.h>
@@ -47,14 +47,14 @@ static NSArray<NSString *> *FFWQAppGroups(void) {
                 BOOL hasDefaultGroup = NO;
                 for (id group in (__bridge NSArray *)value) {
                     if ([group isKindOfClass:NSString.class] && [group hasPrefix:@"group."]) {
-                        if ([group isEqualToString:@"group.com.zex.external"]) {
+                        if ([group isEqualToString:@"group.com.justplayff.external"]) {
                             hasDefaultGroup = YES;
                         } else {
                             [groups addObject:group];
                         }
                     }
                 }
-                if (hasDefaultGroup) [groups addObject:@"group.com.zex.external"];
+                if (hasDefaultGroup) [groups addObject:@"group.com.justplayff.external"];
             }
             CFRelease(value);
         }

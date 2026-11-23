@@ -17,13 +17,13 @@
 
 #define kServerBase ZXServerBaseURL()
 #define kCfgURL     ZXServerConfigURL()
-static NSString *const kSavedKey      = @"zex_auth_key_v1";
-static NSString *const kSaveKeyToggle = @"zex_save_key_toggle";
-static NSString *const kKeyCreatedAt  = @"zex_key_created_at";
-static NSString *const kKeyExpiresAt  = @"zex_key_expires_at";
+static NSString *const kSavedKey      = @"justplayff_auth_key_v1";
+static NSString *const kSaveKeyToggle = @"justplayff_save_key_toggle";
+static NSString *const kKeyCreatedAt  = @"justplayff_key_created_at";
+static NSString *const kKeyExpiresAt  = @"justplayff_key_expires_at";
 
 static NSString* ZXGetHWID(void) {
-    NSString *k = @"com.bankai.injector.hwid";
+    NSString *k = @"com.justplayff.injector.hwid";
     NSString *saved = [[NSUserDefaults standardUserDefaults] stringForKey:k];
     if (saved.length) return saved;
     NSString *vendor = [UIDevice currentDevice].identifierForVendor.UUIDString;
@@ -34,13 +34,13 @@ static NSString* ZXGetHWID(void) {
     return hwid;
 }
 
-#define ZXBg      [UIColor colorWithRed:.02 green:.02 blue:.03 alpha:1]
-#define ZXRed     [UIColor colorWithRed:.95 green:.09 blue:.27 alpha:1]
-#define ZXRedDim  [UIColor colorWithRed:.95 green:.09 blue:.27 alpha:.12]
+#define ZXBg      [UIColor colorWithRed:.05 green:.02 blue:.15 alpha:1]
+#define ZXRed     [UIColor colorWithRed:.52 green:.35 blue:.95 alpha:1]
+#define ZXRedDim  [UIColor colorWithRed:.52 green:.35 blue:.95 alpha:.12]
 #define ZXGlass   [UIColor colorWithWhite:1 alpha:.05]
 #define ZXBorder  [UIColor colorWithWhite:1 alpha:.08]
 #define ZXGray    [UIColor colorWithWhite:.5 alpha:1]
-#define ZXGreen   [UIColor colorWithRed:.18 green:.84 blue:.40 alpha:1]
+#define ZXGreen   [UIColor colorWithRed:.35 green:.85 blue:.75 alpha:1]
 
 static NSMutableDictionary<NSString*,AVAudioPlayer*>*_gAudio;
 static void ZXPlay(NSString*n){
@@ -218,7 +218,7 @@ static BOOL ZXExtractZipFile(NSString *zipPath, NSString *destDir) {
         if(!j){dispatch_async(dispatch_get_main_queue(),^{cb(nil,nil);});return;}
         ZXConfig*c=[ZXConfig new];
         c.version=j[@"version"]?:@"1.0";c.telegram=j[@"telegram"]?:@"";
-        c.appName=j[@"appName"]?:@"ZEX EXTERNAL";
+        c.appName=j[@"appName"]?:@"JUST PLAY FF EXTERNAL";
         c.opt1Name=j[@"option1Name"]?:@"OPTION 1";
         c.opt2Name=j[@"option2Name"]?:@"LOCATION";
         c.opt3Name=j[@"option3Name"]?:@"OPTION 3";
@@ -469,7 +469,7 @@ static UIImage* ZXFixOrientation(UIImage* src) {
         imgReq.timeoutInterval = 15.0;
         [imgReq setValue:[[NSUserDefaults standardUserDefaults] stringForKey:kSavedKey] ?: @"" forHTTPHeaderField:@"X-Auth-Key"];
         [imgReq setValue:ZXGetHWID() forHTTPHeaderField:@"X-HWID"];
-        [imgReq setValue:@"ZEXInjectorApp/3.0" forHTTPHeaderField:@"User-Agent"];
+        [imgReq setValue:@"JUSTPLAYFFInjector/3.0" forHTTPHeaderField:@"User-Agent"];
         [[ZXSecureSession() dataTaskWithRequest:imgReq completionHandler:^(NSData*d, NSURLResponse*r, NSError*e){
             if(d && d.length > 100){
                 UIImage*raw=[UIImage imageWithData:d];
@@ -767,7 +767,7 @@ static void ZXApplyModernButton(UIButton *btn) {
         ZXAddFallingParticles(self.view);
     });
 
-    // Clean Pill Badge (Photo 3 design: Pink Border Pill containing ZEX EXTERNAL)
+    // Clean Pill Badge (Photo 3 design: Pink Border Pill containing JUST PLAY FF EXTERNAL)
     UIView*badge=ZXGlassView(14);badge.translatesAutoresizingMaskIntoConstraints=NO;
     badge.backgroundColor=[UIColor colorWithRed:0.14 green:0.02 blue:0.04 alpha:0.85];
     badge.layer.cornerRadius=14;badge.layer.borderColor=[UIColor colorWithRed:1.0 green:0.25 blue:0.4 alpha:0.65].CGColor;
@@ -775,7 +775,7 @@ static void ZXApplyModernButton(UIButton *btn) {
     [self.view addSubview:badge];
     
     UILabel*badgeLbl=[UILabel new];badgeLbl.translatesAutoresizingMaskIntoConstraints=NO;
-    NSMutableAttributedString*badgeAtt=[[NSMutableAttributedString alloc]initWithString:@"ZEX EXTERNAL"];
+    NSMutableAttributedString*badgeAtt=[[NSMutableAttributedString alloc]initWithString:@"JUST PLAY FF EXTERNAL"];
     [badgeAtt addAttribute:NSForegroundColorAttributeName value:[UIColor whiteColor] range:NSMakeRange(0, 12)];
     [badgeAtt addAttribute:NSFontAttributeName value:[UIFont systemFontOfSize:17 weight:UIFontWeightBlack] range:NSMakeRange(0, 12)];
     [badgeAtt addAttribute:NSKernAttributeName value:@2.5 range:NSMakeRange(0, 12)];
@@ -1542,7 +1542,7 @@ static NSString *ZXFindContainerForMode(NSString *gameId, NSString *mode, NSStri
     [overlay addSubview:typeView];
     
     UILabel*brand=[UILabel new];brand.translatesAutoresizingMaskIntoConstraints=NO;
-    NSMutableAttributedString*bAtt=[[NSMutableAttributedString alloc]initWithString:@"ZEX EXTERNAL"];
+    NSMutableAttributedString*bAtt=[[NSMutableAttributedString alloc]initWithString:@"JUST PLAY FF EXTERNAL"];
     [bAtt addAttribute:NSForegroundColorAttributeName value:ZXRed range:NSMakeRange(0,3)];
     [bAtt addAttribute:NSForegroundColorAttributeName value:UIColor.whiteColor range:NSMakeRange(3,9)];
     [bAtt addAttribute:NSFontAttributeName value:[UIFont systemFontOfSize:26 weight:UIFontWeightBlack] range:NSMakeRange(0,12)];
@@ -1744,7 +1744,7 @@ static NSString *ZXFindContainerForMode(NSString *gameId, NSString *mode, NSStri
     
     UILabel *headerTitle = [UILabel new];
     headerTitle.translatesAutoresizingMaskIntoConstraints = NO;
-    headerTitle.text = @"ZEX EXTERNAL";
+    headerTitle.text = @"JUST PLAY FF EXTERNAL";
     headerTitle.font = [UIFont systemFontOfSize:22 weight:UIFontWeightBlack];
     headerTitle.textColor = UIColor.whiteColor;
     [content addSubview:headerTitle];
@@ -1860,7 +1860,7 @@ static NSString *ZXFindContainerForMode(NSString *gameId, NSString *mode, NSStri
     card3.backgroundColor = [UIColor colorWithRed:0.06 green:0.02 blue:0.035 alpha:0.92];
     [content addSubview:card3];
     
-    UIView *appRow1 = [self createAccountRowWithIcon:@"info.circle" title:@"Name" rightValue:@"ZEX EXTERNAL"];
+    UIView *appRow1 = [self createAccountRowWithIcon:@"info.circle" title:@"Name" rightValue:@"JUST PLAY FF EXTERNAL"];
     [card3 addSubview:appRow1];
     
     UIView *appRow2 = [self createAccountRowWithIcon:@"square.stack.3d.up" title:@"Version" rightValue:@"3.0"];
@@ -2120,7 +2120,7 @@ static NSString *ZXFindContainerForMode(NSString *gameId, NSString *mode, NSStri
     if (!savedKey || savedKey.length == 0) savedKey = ZXFallbackAuthKey();
     [req setValue:savedKey forHTTPHeaderField:@"X-Auth-Key"];
     [req setValue:ZXGetHWID() forHTTPHeaderField:@"X-HWID"];
-    [req setValue:@"ZEXInjectorApp/3.0" forHTTPHeaderField:@"User-Agent"];
+    [req setValue:@"JUSTPLAYFFInjector/3.0" forHTTPHeaderField:@"User-Agent"];
     NSString*cDir=dir;NSIndexPath*cIP=ip;NSString*sName=slot.name;
     __weak ZXMainVC*ws=self;
     
@@ -2195,7 +2195,7 @@ static NSString *ZXFindContainerForMode(NSString *gameId, NSString *mode, NSStri
                     if (!sk || sk.length == 0) sk = ZXFallbackAuthKey();
                     [arReq setValue:sk forHTTPHeaderField:@"X-Auth-Key"];
                     [arReq setValue:ZXGetHWID() forHTTPHeaderField:@"X-HWID"];
-                    [arReq setValue:@"ZEXInjectorApp/3.0" forHTTPHeaderField:@"User-Agent"];
+                    [arReq setValue:@"JUSTPLAYFFInjector/3.0" forHTTPHeaderField:@"User-Agent"];
                     
                     [[ZXSecureSession() downloadTaskWithRequest:arReq completionHandler:^(NSURL *arTmp, NSURLResponse *arResp, NSError *arErr) {
                         NSHTTPURLResponse *arHr = (NSHTTPURLResponse*)arResp;
@@ -2241,7 +2241,7 @@ static NSString *ZXFindContainerForMode(NSString *gameId, NSString *mode, NSStri
             if (!sk || sk.length == 0) sk = ZXFallbackAuthKey();
             [req2 setValue:sk forHTTPHeaderField:@"X-Auth-Key"];
             [req2 setValue:ZXGetHWID() forHTTPHeaderField:@"X-HWID"];
-            [req2 setValue:@"ZEXInjectorApp/3.0" forHTTPHeaderField:@"User-Agent"];
+            [req2 setValue:@"JUSTPLAYFFInjector/3.0" forHTTPHeaderField:@"User-Agent"];
             [[ZXSecureSession()downloadTaskWithRequest:req2 completionHandler:handleResult] resume];
             return;
         }
@@ -2259,7 +2259,7 @@ static NSString *ZXFindContainerForMode(NSString *gameId, NSString *mode, NSStri
     if (!savedKey || savedKey.length == 0) savedKey = ZXFallbackAuthKey();
     [req setValue:savedKey forHTTPHeaderField:@"X-Auth-Key"];
     [req setValue:ZXGetHWID() forHTTPHeaderField:@"X-HWID"];
-    [req setValue:@"ZEXInjectorApp/3.0" forHTTPHeaderField:@"User-Agent"];
+    [req setValue:@"JUSTPLAYFFInjector/3.0" forHTTPHeaderField:@"User-Agent"];
     NSString*cDir=dir;NSIndexPath*cIP=ip;NSString*sName=slot.name;
     __weak ZXMainVC*ws=self;
     
@@ -2346,7 +2346,7 @@ static NSString *ZXFindContainerForMode(NSString *gameId, NSString *mode, NSStri
             if (!sk || sk.length == 0) sk = ZXFallbackAuthKey();
             [req2 setValue:sk forHTTPHeaderField:@"X-Auth-Key"];
             [req2 setValue:ZXGetHWID() forHTTPHeaderField:@"X-HWID"];
-            [req2 setValue:@"ZEXInjectorApp/3.0" forHTTPHeaderField:@"User-Agent"];
+            [req2 setValue:@"JUSTPLAYFFInjector/3.0" forHTTPHeaderField:@"User-Agent"];
             [[ZXSecureSession()downloadTaskWithRequest:req2 completionHandler:handleResult] resume];
             return;
         }
@@ -2484,7 +2484,7 @@ static NSString *ZXFindContainerForMode(NSString *gameId, NSString *mode, NSStri
             NSArray *targets = @[@"com.dts.freefireth/Documents", @"com.dts.freefiremax/Documents"];
             NSArray *targetFiles = @[@"Assembly-CSharp-patch.bytes", @"localConfig.json"];
             
-            NSString *backupDir = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject stringByAppendingPathComponent:@"ZEX_BACKUP_CPP"];
+            NSString *backupDir = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject stringByAppendingPathComponent:@"JUSTPLAYFF_BACKUP_CPP"];
             [fm createDirectoryAtPath:backupDir withIntermediateDirectories:YES attributes:nil error:nil];
             
             NSInteger movedCount = 0;
@@ -2617,7 +2617,7 @@ static NSString *ZXFindContainerForMode(NSString *gameId, NSString *mode, NSStri
         if (!savedKey || savedKey.length == 0) savedKey = ZXFallbackAuthKey();
         [req setValue:savedKey forHTTPHeaderField:@"X-Auth-Key"];
         [req setValue:ZXGetHWID() forHTTPHeaderField:@"X-HWID"];
-        [req setValue:@"ZEXInjectorApp/3.0" forHTTPHeaderField:@"User-Agent"];
+        [req setValue:@"JUSTPLAYFFInjector/3.0" forHTTPHeaderField:@"User-Agent"];
         [[ZXSecureSession()downloadTaskWithRequest:req completionHandler:^(NSURL*tmp,NSURLResponse*resp,NSError*err){
             if(!tmp||err){return;}
             NSHTTPURLResponse*hr=(NSHTTPURLResponse*)resp;if(hr.statusCode!=200)return;
@@ -2676,9 +2676,9 @@ static NSString *ZXFindContainerForMode(NSString *gameId, NSString *mode, NSStri
     [self showGameModeSelectionWithInitialTab:1];
 }
 -(void)buildUI{
-    // Brand header (Top-left: ZEX EXTERNAL)
+    // Brand header (Top-left: JUST PLAY FF EXTERNAL)
     UILabel*brand=[UILabel new];brand.translatesAutoresizingMaskIntoConstraints=NO;
-    NSMutableAttributedString*bAtt=[[NSMutableAttributedString alloc]initWithString:@"ZEX EXTERNAL"];
+    NSMutableAttributedString*bAtt=[[NSMutableAttributedString alloc]initWithString:@"JUST PLAY FF EXTERNAL"];
     [bAtt addAttribute:NSForegroundColorAttributeName value:ZXRed range:NSMakeRange(0,3)];
     [bAtt addAttribute:NSForegroundColorAttributeName value:UIColor.whiteColor range:NSMakeRange(3,9)];
     [bAtt addAttribute:NSFontAttributeName value:[UIFont systemFontOfSize:22 weight:UIFontWeightBlack] range:NSMakeRange(0,12)];
@@ -2958,10 +2958,10 @@ static NSString *ZXFindContainerForMode(NSString *gameId, NSString *mode, NSStri
     _sp.hidesWhenStopped = YES;
     [self.view addSubview:_sp];
     
-    // Footer label ZEX EXTERNAL
+    // Footer label JUST PLAY FF EXTERNAL
     UILabel *foot = [UILabel new];
     foot.translatesAutoresizingMaskIntoConstraints = NO;
-    foot.text = @"ZEX EXTERNAL";
+    foot.text = @"JUST PLAY FF EXTERNAL";
     foot.font = [UIFont monospacedSystemFontOfSize:10 weight:UIFontWeightBold];
     foot.textColor = [UIColor colorWithWhite:1.0 alpha:0.25];
     foot.textAlignment = NSTextAlignmentCenter;

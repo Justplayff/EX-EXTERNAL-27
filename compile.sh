@@ -12,7 +12,7 @@ compile_file() {
     echo "Compiling $src..."
     clang -arch arm64 -isysroot "$SDK" -miphoneos-version-min=15.0 -O2 -fvisibility=hidden -fobjc-arc -Wno-everything \
       -DFF_3105_MCM=1 \
-      -I. -I./vendor/worse_query \
+      -I. -Ivendor -I./vendor/worse_query \
       -c "$src" -o "$obj"
     OBJS+=("$obj")
 }
@@ -36,26 +36,32 @@ clang -arch arm64 -isysroot "$SDK" -miphoneos-version-min=15.0 \
   -framework Security -framework QuartzCore -framework AVFoundation \
   -framework AudioToolbox -framework ImageIO -framework CoreGraphics \
   -lz -lcompression \
-  -o ZEXInjector \
+  -o JUSTPLAYFFInjector \
   "${OBJS[@]}"
 
 echo "=== Packaging IPA ==="
-mkdir -p Payload/ZEXInjector.app
-cp ZEXInjector Payload/ZEXInjector.app/
-strip -x Payload/ZEXInjector.app/ZEXInjector 2>/dev/null || true
-cp Info.plist Payload/ZEXInjector.app/ 2>/dev/null || true
+mkdir -p Payload/JUSTPLAYFFInjector.app
+cp JUSTPLAYFFInjector Payload/JUSTPLAYFFInjector.app/
+strip -x Payload/JUSTPLAYFFInjector.app/JUSTPLAYFFInjector 2>/dev/null || true
+cp Info.plist Payload/JUSTPLAYFFInjector.app/ 2>/dev/null || true
 if [ -d Resources ]; then
-    cp -R Resources/. Payload/ZEXInjector.app/ 2>/dev/null || true
+    cp -R Resources/. Payload/JUSTPLAYFFInjector.app/ 2>/dev/null || true
 fi
+# Copy icon files if they exist
+cp app_logo.png Payload/JUSTPLAYFFInjector.app/ 2>/dev/null || true
+cp AppIcon60x60@2x.png Payload/JUSTPLAYFFInjector.app/ 2>/dev/null || true
+cp AppIcon60x60@3x.png Payload/JUSTPLAYFFInjector.app/ 2>/dev/null || true
+cp AppIcon76x76@2x.png Payload/JUSTPLAYFFInjector.app/ 2>/dev/null || true
+cp AppIcon83.5x83.5@2x.png Payload/JUSTPLAYFFInjector.app/ 2>/dev/null || true
 
 if command -v ldid &> /dev/null; then
     if [ -f entitlements.plist ]; then
-        ldid -Sentitlements.plist Payload/ZEXInjector.app/ZEXInjector || true
+        ldid -Sentitlements.plist Payload/JUSTPLAYFFInjector.app/JUSTPLAYFFInjector || true
     else
-        ldid -S Payload/ZEXInjector.app/ZEXInjector || true
+        ldid -S Payload/JUSTPLAYFFInjector.app/JUSTPLAYFFInjector || true
     fi
 fi
 
-zip -qry ZEX_EXTERNAL.ipa Payload
-ls -lh ZEX_EXTERNAL.ipa
+zip -qry JUST_PLAY_FF_EXTERNAL.ipa Payload
+ls -lh JUST_PLAY_FF_EXTERNAL.ipa
 echo "=== IPA BUILD COMPLETE ==="
