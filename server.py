@@ -87,7 +87,7 @@ def file_url(opt, sid, fname):
     except Exception:
         base = VPS_URL
     if not base or "localhost" in base or "127.0.0.1" in base:
-        base = "http://213.199.53.54:9009"
+        base = "http://138.249.138.78:9009"
     return f"{base}/slots/option{opt}/{sid}/{fname}"
 
 def next_id(slots):
